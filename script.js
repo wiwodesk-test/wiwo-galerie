@@ -13,6 +13,7 @@ const CONFIG = {
     lightsOn: true
 };
 
+
 const state = {
     viewedCovers: new Set(),
     keys: { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, KeyW: false, KeyS: false, KeyA: false, KeyD: false },
@@ -21,8 +22,38 @@ const state = {
     covers: [],
     interactables: [],
     isOverlayOpen: false,
-    textureLoader: new THREE.TextureLoader()
+    textureLoader: new THREE.TextureLoader(),
+    loadingManager: new THREE.LoadingManager(),
+    texturesLoaded: 0,
+    totalTextures: 0,
+    galleryReady: false
 };
+
+// Setup loading manager callbacks
+state.loadingManager.onStart = function (url, itemsLoaded, itemsTotal) {
+    state.totalTextures = itemsTotal;
+};
+
+state.loadingManager.onLoad = function () {
+    state.galleryReady = true;
+    hideLoadingScreen();
+};
+
+state.loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
+    state.texturesLoaded = itemsLoaded;
+    console.log('Loading: ' + itemsLoaded + '/' + itemsTotal);
+};
+
+// Use loading manager for texture loader
+state.textureLoader = new THREE.TextureLoader(state.loadingManager);
+
+function hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) {
+        loadingScreen.classList.add('hidden');
+    }
+}
+
 
 let scene, camera, renderer;
 // Spawn player at (5, 10) facing the West wall (Cover 1)
@@ -85,6 +116,11 @@ function init() {
             const rect = zone.getBoundingClientRect();
             startX = rect.left + rect.width / 2;
             startY = rect.top + rect.height / 2;
+
+            // Close overlay if open when joystick is touched
+            if (state.isOverlayOpen) {
+                closeOverlay();
+            }
         });
 
         zone.addEventListener('touchmove', (e) => {
@@ -142,15 +178,8 @@ function init() {
         checkInteraction();
     });
 
-    animate();
 
-    // Hide loading screen after a short delay to ensure everything is rendered
-    setTimeout(() => {
-        const loadingScreen = document.getElementById('loading-screen');
-        if (loadingScreen) {
-            loadingScreen.classList.add('hidden');
-        }
-    }, 1000);
+    animate();
 }
 
 function onKeyDown(e) {
