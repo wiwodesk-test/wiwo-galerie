@@ -347,4 +347,35 @@ body {
         border: 2px solid #fff;
         z-index: 100;
     }
+
+    /* Mobile Stats Panel - Top Center, Smaller */
+    #stats-panel {
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        align-self: unset;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 8px 16px;
+        border-radius: 20px;
+        min-width: auto;
+        width: auto;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(5px);
+    }
+
+    #stats-panel .stat-label {
+        font-size: 0.65rem;
+        margin-bottom: 2px;
+        opacity: 0.6;
+    }
+
+    #stats-panel .stat-value {
+        font-size: 1.2rem;
+        margin-bottom: 4px;
+    }
+
+    #stats-panel .progress-bar {
+        height: 3px;
+    }
 }
