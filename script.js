@@ -1,8 +1,8 @@
 // 3D Art Gallery - Fixed Navigation and Cover Placement
 
 const CONFIG = {
-    moveSpeed: 0.15,
-    rotSpeed: 0.04,
+    moveSpeed: 0.10,
+    rotSpeed: 0.03,
     wallHeight: 5,
     wallThickness: 0.5,
     roomSize: 20,
@@ -68,13 +68,12 @@ function init() {
         closeOverlay();
     });
 
-    // Mobile Controls - Virtual Joysticks
-    const stickLeft = document.getElementById('stick-left');
-    const stickRight = document.getElementById('stick-right');
-    const zoneLeft = document.getElementById('joystick-zone-left');
-    const zoneRight = document.getElementById('joystick-zone-right');
+    // Mobile Controls - Single Joystick for 4-directional movement
+    const joystickStick = document.getElementById('joystick-stick');
+    const joystickZone = document.getElementById('joystick-zone');
 
-    const maxDist = 25; // Max distance stick can move
+    const maxDist = 40; // Reduced for lower sensitivity
+    const deadZone = 0.3; // Increased for less sensitive movement
 
     function handleJoystick(zone, stick, callback) {
         let startX = 0, startY = 0;
@@ -82,8 +81,9 @@ function init() {
         zone.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const touch = e.changedTouches[0];
-            startX = touch.pageX;
-            startY = touch.pageY;
+            const rect = zone.getBoundingClientRect();
+            startX = rect.left + rect.width / 2;
+            startY = rect.top + rect.height / 2;
         });
 
         zone.addEventListener('touchmove', (e) => {
@@ -115,22 +115,20 @@ function init() {
         zone.addEventListener('touchcancel', reset);
     }
 
-    // Left Stick: Movement (Forward/Backward)
-    handleJoystick(zoneLeft, stickLeft, (x, y) => {
-        // y is negative when moving up (forward)
-        if (y < -0.2) state.keys.ArrowUp = true;
+    // Single Joystick: 4-directional movement
+    handleJoystick(joystickZone, joystickStick, (x, y) => {
+        // Forward/Backward (Y-axis)
+        if (y < -deadZone) state.keys.ArrowUp = true;
         else state.keys.ArrowUp = false;
 
-        if (y > 0.2) state.keys.ArrowDown = true;
+        if (y > deadZone) state.keys.ArrowDown = true;
         else state.keys.ArrowDown = false;
-    });
 
-    // Right Stick: Rotation (Left/Right)
-    handleJoystick(zoneRight, stickRight, (x, y) => {
-        if (x < -0.2) state.keys.ArrowLeft = true;
+        // Left/Right rotation (X-axis)
+        if (x < -deadZone) state.keys.ArrowLeft = true;
         else state.keys.ArrowLeft = false;
 
-        if (x > 0.2) state.keys.ArrowRight = true;
+        if (x > deadZone) state.keys.ArrowRight = true;
         else state.keys.ArrowRight = false;
     });
 
