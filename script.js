@@ -1,7 +1,7 @@
 // 3D Art Gallery - Fixed Navigation and Cover Placement
 
 const CONFIG = {
-    moveSpeed: 0.10,
+    moveSpeed: 0.07, // Reduced from 0.10
     rotSpeed: 0.02,
     wallHeight: 5,
     wallThickness: 0.5,
