@@ -14,15 +14,28 @@ const COVERS_DATA = [
         title: "Magazine Issue #1",
         description: "A bold exploration of color and form. This is the special 100th Anniversary Edition cover number 1."
     },
-    // Add covers 2-100 here following the same format
-    // Example for cover 2:
-    // {
-    //     id: 1,
-    //     lowRes: "assets/covers/low/cover_02.jpg",
-    //     highRes: "assets/covers/high/cover_02.jpg",
-    //     title: "Magazine Issue #2",
-    //     description: "Celebrating our rich history and heritage. This is the special 100th Anniversary Edition cover number 2."
-    // },
+    {
+        id: 1,
+        lowRes: "assets/covers/low/cover_02.jpg",
+        highRes: "assets/covers/high/cover_02.jpg",
+        title: "Magazine Issue #2",
+        description: "Celebrating our rich history and heritage."
+    },
+    {
+        id: 2,
+        lowRes: "assets/covers/low/cover_03.jpg",
+        highRes: "assets/covers/high/cover_03.jpg",
+        title: "Magazine Issue #3",
+        description: "Innovation and excellence in every page."
+    },
+    {
+        id: 3,
+        lowRes: "assets/covers/low/cover_04.jpg",
+        highRes: "assets/covers/high/cover_04.jpg",
+        title: "Magazine Issue #4",
+        description: "A journey through time and achievement."
+    }
+    // Add covers 5-100 here following the same format
 ];
 
 // Export for use in script.js
