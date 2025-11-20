@@ -2,7 +2,7 @@
 
 const CONFIG = {
     moveSpeed: 0.10,
-    rotSpeed: 0.03,
+    rotSpeed: 0.02,
     wallHeight: 5,
     wallThickness: 0.5,
     roomSize: 20,
@@ -72,8 +72,9 @@ function init() {
     const joystickStick = document.getElementById('joystick-stick');
     const joystickZone = document.getElementById('joystick-zone');
 
-    const maxDist = 40; // Reduced for lower sensitivity
-    const deadZone = 0.3; // Increased for less sensitive movement
+    const maxDist = 40;
+    const deadZoneY = 0.3; // Deadzone for forward/backward
+    const deadZoneX = 0.6; // Higher deadzone for left/right (less sensitive)
 
     function handleJoystick(zone, stick, callback) {
         let startX = 0, startY = 0;
@@ -118,17 +119,17 @@ function init() {
     // Single Joystick: 4-directional movement
     handleJoystick(joystickZone, joystickStick, (x, y) => {
         // Forward/Backward (Y-axis)
-        if (y < -deadZone) state.keys.ArrowUp = true;
+        if (y < -deadZoneY) state.keys.ArrowUp = true;
         else state.keys.ArrowUp = false;
 
-        if (y > deadZone) state.keys.ArrowDown = true;
+        if (y > deadZoneY) state.keys.ArrowDown = true;
         else state.keys.ArrowDown = false;
 
         // Left/Right rotation (X-axis)
-        if (x < -deadZone) state.keys.ArrowLeft = true;
+        if (x < -deadZoneX) state.keys.ArrowLeft = true;
         else state.keys.ArrowLeft = false;
 
-        if (x > deadZone) state.keys.ArrowRight = true;
+        if (x > deadZoneX) state.keys.ArrowRight = true;
         else state.keys.ArrowRight = false;
     });
 
