@@ -11,8 +11,8 @@ const COVERS_DATA = [
         id: 0,
         lowRes: "assets/covers/low/cover_01.jpg",
         highRes: "assets/covers/high/cover_01.jpg",
-        title: "Magazine Issue #1",
-        description: "A bold exploration of color and form. This is the special 100th Anniversary Edition cover number 1."
+        title: "Die erste Ausgabe",
+        description: "1926 startet die Vorgängerzeitschrift der WirtschaftsWoche in Berlin."
     },
     {
         id: 1,
