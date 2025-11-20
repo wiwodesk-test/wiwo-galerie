@@ -1,7 +1,7 @@
 :root {
     --color-black: #111111;
     --color-white: #FFFFFF;
-    --color-accent: #E60000;
+    --color-accent: #e30613;
     --font-main: 'Inter', sans-serif;
 }
 
@@ -128,14 +128,14 @@ body {
 .overlay-content {
     background: #111;
     padding: 40px;
-    border: 2px solid #e60000;
+    border: 2px solid #e30613;
     text-align: center;
     max-width: none;
     max-height: none;
     width: 95vw;
     height: 95vh;
     position: relative;
-    box-shadow: 0 0 50px rgba(230, 0, 0, 0.2);
+    box-shadow: 0 0 50px rgba(227, 6, 19, 0.2);
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -157,7 +157,7 @@ body {
 }
 
 #close-btn:hover {
-    color: #e60000;
+    color: #e30613;
 }
 
 #overlay-image-container {
@@ -190,7 +190,7 @@ body {
     font-family: 'Playfair Display', serif;
     font-size: 3rem;
     margin-bottom: 20px;
-    border-bottom: 2px solid #e60000;
+    border-bottom: 2px solid #e30613;
     display: inline-block;
     padding-bottom: 10px;
     color: #fff;
@@ -265,7 +265,7 @@ body {
 .joystick-stick {
     width: 60px;
     height: 60px;
-    background: rgba(230, 0, 0, 0.9);
+    background: rgba(227, 6, 19, 0.9);
     border: 2px solid rgba(255, 255, 255, 0.8);
     border-radius: 50%;
     position: absolute;
@@ -290,10 +290,10 @@ body {
     #interaction-prompt {
         pointer-events: auto;
         cursor: pointer;
-        background: rgba(230, 0, 0, 0.9);
+        background: rgba(227, 6, 19, 0.9);
         font-size: 1.5rem;
         padding: 15px 30px;
-        bottom: 20%;
+        bottom: 30%;
         top: auto;
         transform: translate(-50%, 0);
     }
