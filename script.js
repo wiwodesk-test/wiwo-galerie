@@ -265,59 +265,44 @@ function createSkybox() {
     scene.add(sky);
 }
 
-function createNoiseTexture(width, height, color1, color2, scale = 1) {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = color1;
-    ctx.fillRect(0, 0, width, height);
-    for (let i = 0; i < 5000 * scale; i++) {
-        const x = Math.random() * width;
-        const y = Math.random() * height;
-        const size = Math.random() * 2 + 1;
-        const alpha = Math.random() * 0.1;
-        ctx.fillStyle = color2.replace('A', alpha);
-        ctx.fillRect(x, y, size, size);
-    }
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = THREE.RepeatWrapping;
-    tex.wrapT = THREE.RepeatWrapping;
-    return tex;
-}
-
-function createWoodTexture() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#8B4513';
-    ctx.fillRect(0, 0, 512, 512);
-    ctx.strokeStyle = '#654321';
-    ctx.lineWidth = 2;
-    for (let i = 0; i < 50; i++) {
-        ctx.beginPath();
-        ctx.moveTo(0, Math.random() * 512);
-        ctx.bezierCurveTo(100, Math.random() * 512, 400, Math.random() * 512, 512, Math.random() * 512);
-        ctx.stroke();
-    }
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = THREE.RepeatWrapping;
-    tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(4, 4);
-    return tex;
-}
-
 function buildGallery() {
-    const floorTex = createNoiseTexture(512, 512, '#888888', 'rgba(255,255,255,A)', 2);
-    floorTex.repeat.set(10, 10);
-    const wallTex = createNoiseTexture(512, 512, '#ffffff', 'rgba(0,0,0,A)', 1);
-    wallTex.repeat.set(2, 1);
-    const woodTex = createWoodTexture();
+    const floorTex = state.textureLoader.load('assets/textures/floor_wood_neutral.png');
+    floorTex.wrapS = THREE.RepeatWrapping;
+    floorTex.wrapT = THREE.RepeatWrapping;
+    floorTex.repeat.set(8, 8);
+    floorTex.encoding = THREE.sRGBEncoding;
 
-    const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.1, metalness: 0.1 });
-    const ceilingMat = new THREE.MeshStandardMaterial({ map: woodTex, roughness: 0.8 });
-    const wallMat = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.9 });
+    const wallTex = state.textureLoader.load('assets/textures/wall_concrete.png');
+    wallTex.wrapS = THREE.RepeatWrapping;
+    wallTex.wrapT = THREE.RepeatWrapping;
+    wallTex.repeat.set(2, 1);
+    wallTex.encoding = THREE.sRGBEncoding;
+
+    const ceilingTex = state.textureLoader.load('assets/textures/ceiling_wood.png');
+    ceilingTex.wrapS = THREE.RepeatWrapping;
+    ceilingTex.wrapT = THREE.RepeatWrapping;
+    ceilingTex.repeat.set(4, 4);
+    ceilingTex.encoding = THREE.sRGBEncoding;
+
+    const floorMat = new THREE.MeshStandardMaterial({
+        map: floorTex,
+        roughness: 0.8,
+        metalness: 0.0,
+        envMapIntensity: 0.2
+    });
+
+    const ceilingMat = new THREE.MeshStandardMaterial({
+        map: ceilingTex,
+        roughness: 0.6,
+        color: 0xffffff
+    });
+
+    const wallMat = new THREE.MeshStandardMaterial({
+        map: wallTex,
+        roughness: 0.8,
+        color: 0xffffff
+    });
+
     const lightMat = new THREE.MeshBasicMaterial({ color: 0xffffee });
 
     const wallGeo = new THREE.BoxGeometry(1, CONFIG.wallHeight, 1);
@@ -352,18 +337,21 @@ function buildGallery() {
     c1.rotation.x = Math.PI / 2;
     c1.position.set(0, CONFIG.wallHeight, 10);
     scene.add(c1);
+    addCeilingLight(0, 10);
 
     // Room 2 (NE) - Standard
     const c2 = new THREE.Mesh(ceilingGeo, ceilingMat);
     c2.rotation.x = Math.PI / 2;
     c2.position.set(20, CONFIG.wallHeight, 10);
     scene.add(c2);
+    addCeilingLight(20, 10);
 
     // Room 3 (SW) - Standard
     const c3 = new THREE.Mesh(ceilingGeo, ceilingMat);
     c3.rotation.x = Math.PI / 2;
     c3.position.set(0, CONFIG.wallHeight, 30);
     scene.add(c3);
+    addCeilingLight(0, 30);
 
     // Room 4 (SE) - HIGH CEILING (5x height)
     const highHeight = CONFIG.wallHeight * 5;
@@ -371,13 +359,15 @@ function buildGallery() {
     c4.rotation.x = Math.PI / 2;
     c4.position.set(20, highHeight, 30);
     scene.add(c4);
+    // Light for Room 4 (higher up)
+    const fixture4 = new THREE.Mesh(new THREE.BoxGeometry(2, 0.1, 0.5), lightMat);
+    fixture4.position.set(20, highHeight - 0.05, 30);
+    scene.add(fixture4);
 
     // Add High Walls with Windows for Room 4
-    // Room 4 bounds: x=[10, 30], z=[20, 40]
     const windowFrameMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
 
     function addWindowWall(x, z, w, d, rot) {
-        // Create pillars
         const pillarGeo = new THREE.BoxGeometry(0.5, highHeight - CONFIG.wallHeight, 0.5);
         const numWindows = 4;
         const step = (w > d ? w : d) / numWindows;
@@ -385,15 +375,11 @@ function buildGallery() {
         for (let i = 0; i <= numWindows; i++) {
             const pillar = new THREE.Mesh(pillarGeo, windowFrameMat);
             const offset = -((w > d ? w : d) / 2) + i * step;
-
-            // Slight offset to prevent z-fighting with walls
             if (w > d) pillar.position.set(x + offset, (highHeight + CONFIG.wallHeight) / 2, z);
             else pillar.position.set(x, (highHeight + CONFIG.wallHeight) / 2, z + offset);
-
             scene.add(pillar);
         }
 
-        // Top and bottom beams
         const beamGeo = new THREE.BoxGeometry(w > d ? w : 0.5, 0.5, w > d ? 0.5 : d);
         const bottomBeam = new THREE.Mesh(beamGeo, windowFrameMat);
         bottomBeam.position.set(x, CONFIG.wallHeight, z);
@@ -404,24 +390,29 @@ function buildGallery() {
         scene.add(topBeam);
     }
 
-    // East Wall of Room 4 - Offset slightly
     addWindowWall(29.75, 30, 0, 20, 0);
-    // South Wall of Room 4 - Offset slightly
     addWindowWall(20, 39.75, 20, 0, 0);
-    // West Wall of Room 4 (Upper part) - Offset slightly
     addWindowWall(10.25, 30, 0, 20, 0);
-    // North Wall of Room 4 (Upper part) - Offset slightly
     addWindowWall(20, 20.25, 20, 0, 0);
 
     const wt = CONFIG.wallThickness;
+
+    // Revert to Original Wall Layout
+    // Outer Walls
     addWall(10, -wt / 2, 40 + wt * 2, wt);
     addWall(10, 40 + wt / 2, 40 + wt * 2, wt);
     addWall(-10 - wt / 2, 20, wt, 40 + wt * 2);
     addWall(30 + wt / 2, 20, wt, 40 + wt * 2);
+
+    // Vertical Divider (x=10)
     addWall(10, 5, wt, 10);
     addWall(10, 35, wt, 10);
-    addWall(0, 20, 10, wt);
-    addWall(20, 20, 10, wt);
+
+    // Horizontal Divider (z=20) - Widened gap (width 8 instead of 10)
+    addWall(0, 20, 8, wt);
+    addWall(20, 20, 8, wt);
+
+    // Central Pillar (4x4 block at x=10, z=20)
     addWall(10, 20, 4, 4);
 
     addObstacles();
@@ -429,12 +420,36 @@ function buildGallery() {
 }
 
 function addObstacles() {
+    const benchTex = state.textureLoader.load('assets/textures/bench_wood.png');
+    benchTex.encoding = THREE.sRGBEncoding;
+
+    const plantTex = state.textureLoader.load('assets/textures/plant_leaf.png');
+    plantTex.encoding = THREE.sRGBEncoding;
+    plantTex.wrapS = THREE.RepeatWrapping;
+    plantTex.wrapT = THREE.RepeatWrapping;
+
+    const potTex = state.textureLoader.load('assets/textures/pot_clay.png');
+    potTex.encoding = THREE.sRGBEncoding;
+
     const benchGeo = new THREE.BoxGeometry(4, 0.5, 1.5);
-    const benchMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-    const plantGeo = new THREE.CylinderGeometry(0.5, 0.3, 1, 16);
-    const plantMat = new THREE.MeshStandardMaterial({ color: 0x228B22 });
-    const potGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.5, 16);
-    const potMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+    const benchMat = new THREE.MeshStandardMaterial({
+        map: benchTex,
+        roughness: 0.3,
+        metalness: 0.1
+    });
+
+    const leafGeo = new THREE.IcosahedronGeometry(0.4, 1);
+    const plantMat = new THREE.MeshStandardMaterial({
+        map: plantTex,
+        roughness: 0.8,
+        color: 0x66aa66
+    });
+
+    const potGeo = new THREE.CylinderGeometry(0.4, 0.3, 0.5, 16);
+    const potMat = new THREE.MeshStandardMaterial({
+        map: potTex,
+        roughness: 0.9
+    });
 
     function addBench(x, z, rot) {
         const bench = new THREE.Mesh(benchGeo, benchMat);
@@ -450,10 +465,27 @@ function addObstacles() {
         const group = new THREE.Group();
         const pot = new THREE.Mesh(potGeo, potMat);
         pot.position.y = 0.25;
-        const plant = new THREE.Mesh(plantGeo, plantMat);
-        plant.position.y = 1;
+        pot.castShadow = true;
+        pot.receiveShadow = true;
         group.add(pot);
-        group.add(plant);
+
+        const foliage = new THREE.Group();
+        foliage.position.y = 0.8;
+
+        const positions = [
+            [0, 0, 0], [0.3, 0.2, 0], [-0.3, 0.2, 0],
+            [0, 0.2, 0.3], [0, 0.2, -0.3], [0, 0.5, 0]
+        ];
+
+        positions.forEach(pos => {
+            const leaf = new THREE.Mesh(leafGeo, plantMat);
+            leaf.position.set(...pos);
+            leaf.castShadow = true;
+            leaf.receiveShadow = true;
+            foliage.add(leaf);
+        });
+
+        group.add(foliage);
         group.position.set(x, 0, z);
         scene.add(group);
 
@@ -464,13 +496,13 @@ function addObstacles() {
     }
 
     addBench(0, 10, 0);
-    addPlant(-3, 5);  // Room 1 (NW) - more centered
+    addPlant(-3, 5);
     addBench(20, 10, Math.PI / 2);
-    addPlant(23, 5);  // Room 2 (NE) - more centered
+    addPlant(23, 5);
     addBench(20, 30, 0);
-    addPlant(23, 35);  // Room 3 (SE) - more centered
+    addPlant(23, 35);
     addBench(0, 30, Math.PI / 2);
-    addPlant(-3, 35);  // Room 4 (SW) - more centered
+    addPlant(-3, 35);
 }
 
 function createFrame(width, height) {
@@ -830,7 +862,11 @@ function updateInteractionPrompt() {
     const prompt = document.getElementById('interaction-prompt');
     if (closest) {
         if (closest.userData.type === 'switch') {
-            prompt.innerText = 'Dimme das Licht';
+            if (CONFIG.lightsOn) {
+                prompt.innerText = 'Dimme das Licht';
+            } else {
+                prompt.innerText = 'Mehr Licht';
+            }
         } else {
             prompt.innerText = 'Ansehen';
         }
