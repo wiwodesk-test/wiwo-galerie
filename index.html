@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Art Gallery Walkthrough</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+
+<body>
+    <div id="ui-layer">
+        <div id="info-panel">
+            <h1>WiWo Galerie</h1>
+            <p>Nutze die <strong>Pfeiltasten</strong> zum Bewegen.</p>
+            <p>Drücke <strong>Enter</strong> für mehr Infos.</p>
+        </div>
+        <div id="stats-panel">
+            <div class="stat-label">Betrachtete Titelseiten</div>
+            <div class="stat-value" id="completion-rate">0%</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        <div id="cover-overlay" class="hidden">
+            <div class="overlay-content">
+                <button id="close-btn">&times;</button>
+                <div id="overlay-image-container"></div>
+                <div id="overlay-info">
+                    <h2 id="overlay-title">Titelseite</h2>
+                    <p id="overlay-desc">Hier steht die Beschreibung zur Titelseite.</p>
+                </div>
+            </div>
+        </div>
+        <div id="interaction-prompt" class="hidden">Ansehen</div>
+        <div id="mobile-controls">
+            <div id="joystick-zone-left" class="joystick-zone">
+                <div class="joystick-base">
+                    <div class="joystick-stick" id="stick-left"></div>
+                </div>
+            </div>
+            <div id="joystick-zone-right" class="joystick-zone">
+                <div class="joystick-base">
+                    <div class="joystick-stick" id="stick-right"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="canvas-container"></div>
+    <script src="covers-data.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
