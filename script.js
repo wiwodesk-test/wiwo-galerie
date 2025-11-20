@@ -143,6 +143,14 @@ function init() {
     });
 
     animate();
+
+    // Hide loading screen after a short delay to ensure everything is rendered
+    setTimeout(() => {
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+            loadingScreen.classList.add('hidden');
+        }
+    }, 1000);
 }
 
 function onKeyDown(e) {
