@@ -404,6 +404,10 @@ body {
         /* For close button positioning */
         justify-content: flex-start;
         /* Start from top */
+
+        /* Add padding at bottom so text can scroll above the joystick */
+        padding-bottom: 200px;
+        display: block;
     }
 
     #overlay-image-container {
@@ -412,7 +416,7 @@ body {
         width: 100%;
         height: auto;
         max-height: 55vh;
-        /* Increased from 35vh to make it much larger */
+        /* Large image as requested */
         padding: 0;
         display: flex;
         justify-content: center;
@@ -466,6 +470,7 @@ body {
         right: 10px;
         font-size: 24px;
         background: rgba(164, 135, 135, 0.1);
+        /* User's custom color */
         width: 36px;
         height: 36px;
         border-radius: 50%;
