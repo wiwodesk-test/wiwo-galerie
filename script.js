@@ -29,7 +29,8 @@ const state = {
     galleryReady: false,
     isVideoPlaying: false,
     isVideoPaused: false,
-    css3DObject: null
+    css3DObject: null,
+    joystick: { x: 0, y: 0 }
 };
 
 // Setup loading manager callbacks
@@ -187,19 +188,8 @@ function init() {
 
     // Single Joystick: 4-directional movement
     handleJoystick(joystickZone, joystickStick, (x, y) => {
-        // Forward/Backward (Y-axis)
-        if (y < -deadZoneY) state.keys.ArrowUp = true;
-        else state.keys.ArrowUp = false;
-
-        if (y > deadZoneY) state.keys.ArrowDown = true;
-        else state.keys.ArrowDown = false;
-
-        // Left/Right rotation (X-axis)
-        if (x < -deadZoneX) state.keys.ArrowLeft = true;
-        else state.keys.ArrowLeft = false;
-
-        if (x > deadZoneX) state.keys.ArrowRight = true;
-        else state.keys.ArrowRight = false;
+        state.joystick.x = x;
+        state.joystick.y = y;
     });
 
     // Make interaction prompt clickable
@@ -1066,7 +1056,7 @@ function placeCovers() {
             const mat = new THREE.MeshStandardMaterial({
                 roughness: 0.4,
                 color: 0xffffff,
-                emissive: 0x555555 // Start lighter
+                emissive: 0x111111 // Start darker
             });
             mat.map = createCoverTexture(coverIndex, false, mat);
             const mesh = new THREE.Mesh(coverGeo, mat);
@@ -1216,12 +1206,23 @@ function updateMovement() {
     if (state.isOverlayOpen) return;
 
     let moveStep = 0;
+    // Keyboard Movement
     if (state.keys.ArrowUp || state.keys.KeyW) moveStep = CONFIG.moveSpeed;
     if (state.keys.ArrowDown || state.keys.KeyS) moveStep = -CONFIG.moveSpeed;
 
+    // Joystick Movement
+    if (state.joystick.y < -0.3) moveStep = CONFIG.moveSpeed;
+    if (state.joystick.y > 0.3) moveStep = -CONFIG.moveSpeed;
+
     let rotChange = 0;
+    // Keyboard Rotation
     if (state.keys.ArrowLeft || state.keys.KeyA) rotChange = CONFIG.rotSpeed;
     if (state.keys.ArrowRight || state.keys.KeyD) rotChange = -CONFIG.rotSpeed;
+
+    // Joystick Rotation (Reduced Sensitivity)
+    // Using a lower multiplier for smoother mobile turning
+    if (state.joystick.x < -0.6) rotChange = CONFIG.rotSpeed * 0.4;
+    if (state.joystick.x > 0.6) rotChange = -CONFIG.rotSpeed * 0.4;
 
     // If video is playing and user tries to move, close the video
     if (state.isVideoPlaying && (moveStep !== 0 || rotChange !== 0)) {
