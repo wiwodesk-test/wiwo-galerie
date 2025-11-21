@@ -6,7 +6,7 @@ const CONFIG = {
     wallHeight: 5,
     wallThickness: 0.5,
     roomSize: 20,
-    collisionRadius: 1.5, // Increased from 0.8 to keep player further from walls
+    collisionRadius: 0.8, // Reduced to 0.8 for easier navigation
     eyeHeight: 1.7,
     totalCovers: 100,
     interactionDist: 3.0,
@@ -26,7 +26,10 @@ const state = {
     loadingManager: new THREE.LoadingManager(),
     texturesLoaded: 0,
     totalTextures: 0,
-    galleryReady: false
+    galleryReady: false,
+    isVideoPlaying: false,
+    isVideoPaused: false,
+    css3DObject: null
 };
 
 // Setup loading manager callbacks
@@ -55,9 +58,30 @@ function hideLoadingScreen() {
 }
 
 
-let scene, camera, renderer;
-// Spawn player at (5, 10) facing the West wall (Cover 1)
-let player = { x: 5, z: 10, rot: Math.PI / 2 };
+let scene, camera, renderer, cssScene, cssRenderer;
+// Spawn player at (5, 6) facing South (towards central pillar) to see gallery and avoid bench
+let player = { x: 5, y: 0, z: 6, rot: Math.PI };
+
+function getGroundHeight(x, z) {
+    // Stairs in Room 2 (NE)
+    // Location: x: 24-27, z: 5-15.
+    // Orientation: Up is North (towards z=5).
+    // Bottom: z=15 (y=0). Top: z=5 (y=5).
+    if (x >= 24 && x <= 27 && z >= 5 && z <= 15) {
+        const h = (15 - z) * 0.5;
+        return Math.max(0, Math.min(5.02, h));
+    }
+
+    // Second Floor Area (Room 1 & 2)
+    // Bounds: x: -10 to 30, z: 0 to 20.
+    // If player is already high enough, snap to 2nd floor.
+    // We use a hysteresis or check previous Y to decide.
+    // Here we assume if you are above 4.0, you are on the 2nd floor.
+    if (player.y >= 4.0 && x >= -10 && x <= 30 && z >= 0 && z <= 20) {
+        return 5.02; // Slightly above 5.0 to avoid collision with ground floor wall tops
+    }
+    return 0;
+}
 
 function init() {
     scene = new THREE.Scene();
@@ -72,6 +96,15 @@ function init() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputEncoding = THREE.sRGBEncoding;
     document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+    // CSS3D Renderer for YouTube video
+    cssScene = new THREE.Scene();
+    cssRenderer = new THREE.CSS3DRenderer();
+    cssRenderer.setSize(window.innerWidth, window.innerHeight);
+    cssRenderer.domElement.style.position = 'absolute';
+    cssRenderer.domElement.style.top = '0';
+    cssRenderer.domElement.style.pointerEvents = 'none';
+    document.getElementById('canvas-container').appendChild(cssRenderer.domElement);
 
     setupLighting();
     createSkybox();
@@ -177,12 +210,47 @@ function init() {
         e.preventDefault();
         checkInteraction();
     });
-
+    // Force hide loading screen after 5 seconds just in case
+    setTimeout(() => {
+        if (!state.galleryReady) {
+            console.warn('Loading timed out, forcing start.');
+            hideLoadingScreen();
+            state.galleryReady = true;
+        }
+    }, 5000);
 
     animate();
 }
 
 function onKeyDown(e) {
+    // Video controls take priority
+    if (state.isVideoPlaying) {
+        // Exit video with Escape, Enter, or any movement key
+        if (['Escape', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyS', 'KeyA', 'KeyD'].includes(e.code)) {
+            e.preventDefault();
+            closeVideo();
+            return;
+        }
+        // Space toggles pause/play (and restarts if paused)
+        if (e.code === 'Space') {
+            e.preventDefault();
+            const videoIframe = document.getElementById('video-screen');
+            if (videoIframe && videoIframe.contentWindow) {
+                if (state.isVideoPaused) {
+                    // Play video
+                    videoIframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                    state.isVideoPaused = false;
+                } else {
+                    // Pause video
+                    videoIframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                    state.isVideoPaused = true;
+                }
+            }
+            return;
+        }
+        return; // Block all other keys when video is playing
+    }
+
     if (state.isOverlayOpen) {
         if (e.code === 'Escape') closeOverlay();
         return;
@@ -360,9 +428,10 @@ function buildGallery() {
         scene.add(fixture);
     }
 
-    const floorGeo = new THREE.PlaneGeometry(100, 100);
+    const floorGeo = new THREE.PlaneGeometry(40, 40);
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
+    floor.position.set(10, 0, 20);
     floor.receiveShadow = true;
     scene.add(floor);
 
@@ -376,8 +445,44 @@ function buildGallery() {
     scene.add(c1);
     addCeilingLight(0, 10);
 
-    // Room 2 (NE) - Standard
-    const c2 = new THREE.Mesh(ceilingGeo, ceilingMat);
+    // Room 2 (NE) - Standard with Hole for Stairs
+    // Create ceiling with hole
+    const c2Shape = new THREE.Shape();
+    c2Shape.moveTo(-10, -10);
+    c2Shape.lineTo(10, -10);
+    c2Shape.lineTo(10, 10);
+    c2Shape.lineTo(-10, 10);
+    c2Shape.lineTo(-10, -10);
+
+    // Hole for stairs: x: 24-27 (local 4-7), z: 5-15 (local -5 to 5)
+    // Room 2 center is (20, 10).
+    // Stairs global x: 24-27 -> local x: 4 to 7
+    // Stairs global z: 5-15 -> local z: -5 to 5
+    // Note: PlaneGeometry is centered.
+    // Let's use 4 planes to make a hole instead of shape for simplicity with UVs, or just ShapeGeometry.
+    // Using ShapeGeometry for ceiling is fine.
+    const holePath = new THREE.Path();
+    holePath.moveTo(4, -5);
+    holePath.lineTo(7, -5);
+    holePath.lineTo(7, 5);
+    holePath.lineTo(4, 5);
+    holePath.lineTo(4, -5);
+    c2Shape.holes.push(holePath);
+
+    const c2Geo = new THREE.ShapeGeometry(c2Shape);
+
+    // Fix UVs to match PlaneGeometry (map -10..10 to 0..1)
+    const uvAttribute = c2Geo.attributes.uv;
+    const posAttribute = c2Geo.attributes.position;
+    for (let i = 0; i < posAttribute.count; i++) {
+        const x = posAttribute.getX(i);
+        const y = posAttribute.getY(i);
+        const u = (x + 10) / 20;
+        const v = (y + 10) / 20;
+        uvAttribute.setXY(i, u, v);
+    }
+
+    const c2 = new THREE.Mesh(c2Geo, ceilingMat);
     c2.rotation.x = Math.PI / 2;
     c2.position.set(20, CONFIG.wallHeight, 10);
     scene.add(c2);
@@ -389,6 +494,13 @@ function buildGallery() {
     c3.position.set(0, CONFIG.wallHeight, 30);
     scene.add(c3);
     addCeilingLight(0, 30);
+
+    // Concrete floor above Room 3
+    const floorAboveGeo = new THREE.PlaneGeometry(20, 20);
+    const floorAbove = new THREE.Mesh(floorAboveGeo, wallMat);
+    floorAbove.rotation.x = -Math.PI / 2;
+    floorAbove.position.set(0, CONFIG.wallHeight + 0.01, 30);
+    scene.add(floorAbove);
 
     // Room 4 (SE) - HIGH CEILING (5x height)
     const highHeight = CONFIG.wallHeight * 5;
@@ -451,6 +563,301 @@ function buildGallery() {
 
     // Central Pillar (4x4 block at x=10, z=20)
     addWall(10, 20, 4, 4);
+
+    // --- Second Floor & Stairs ---
+
+    // Stairs in Room 2 (NE)
+    // x: 24-27, z: 5-15. Rise from y=0 to y=5.01.
+    const steps = 20;
+    const stepHeight = 5.01 / steps;
+    const stepDepth = 10 / steps;
+    const stepWidth = 3;
+    const stepGeo = new THREE.BoxGeometry(stepWidth, stepHeight, stepDepth);
+    const stepMat = new THREE.MeshStandardMaterial({ map: floorTex });
+
+    for (let i = 0; i < steps; i++) {
+        const s = new THREE.Mesh(stepGeo, stepMat);
+        // z starts at 15 and goes to 5. y starts at 0.
+        // Adjust y to start exactly from floor
+        s.position.set(25.5, i * stepHeight + stepHeight / 2, 15 - i * stepDepth - stepDepth / 2);
+        s.receiveShadow = true;
+        s.castShadow = true;
+        scene.add(s);
+    }
+
+    const railHeight = 1.0;
+    const railMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+
+    function addRailing(x, z, w, d) {
+        const r = new THREE.Mesh(new THREE.BoxGeometry(w, railHeight, d), railMat);
+        r.position.set(x, 5 + railHeight / 2, z);
+        scene.add(r);
+        state.obstacles.push(new THREE.Box3().setFromObject(r));
+    }
+
+    // West Railing (2nd Floor)
+    addRailing(23.95, 10, 0.1, 10);
+    // East Railing (2nd Floor)
+    addRailing(27.05, 10, 0.1, 10);
+    // South Railing (2nd Floor) - Back of hole
+    addRailing(25.5, 15.05, 3.2, 0.1);
+    // North Railing REMOVED to allow exit
+
+    // Ground Floor Barriers for Stairs
+    // Prevent entry from side (West) and under/top (North)
+    // West Barrier (Wall)
+    const barrierGeo = new THREE.BoxGeometry(0.1, 5, 10);
+    const barrierWest = new THREE.Mesh(barrierGeo, wallMat);
+    barrierWest.position.set(23.95, 2.5, 10);
+    scene.add(barrierWest);
+    state.walls.push(new THREE.Box3().setFromObject(barrierWest));
+
+    // East Barrier (Railing extended to ceiling)
+    const groundRailEast = new THREE.Mesh(new THREE.BoxGeometry(0.1, 5, 10), railMat);
+    groundRailEast.position.set(27.05, 2.5, 10);
+    scene.add(groundRailEast);
+    state.obstacles.push(new THREE.Box3().setFromObject(groundRailEast));
+
+    // North Barrier (Under top of stairs) - Lowered to allow exit on 2nd floor
+    const barrierNorth = new THREE.Mesh(new THREE.BoxGeometry(3.2, 4, 0.1), wallMat);
+    barrierNorth.position.set(25.5, 2, 4.95);
+    scene.add(barrierNorth);
+    state.walls.push(new THREE.Box3().setFromObject(barrierNorth));
+
+    // Second Floor Floor (y=5.01)
+    // Split into 4 rectangles to avoid ShapeGeometry triangulation artifacts
+    // Area: x: -10 to 30, z: 0 to 20.
+    // Hole: x: 24-27, z: 5-15.
+
+    // 1. Main West Section (x: -10 to 24, z: 0 to 20)
+    const f2Geo1 = new THREE.PlaneGeometry(34, 20);
+    const f2_1 = new THREE.Mesh(f2Geo1, floorMat);
+    f2_1.rotation.x = -Math.PI / 2;
+    f2_1.position.set(7, 5.01, 10);
+    f2_1.receiveShadow = true;
+    scene.add(f2_1);
+
+    // 2. East Strip (x: 27 to 30, z: 0 to 20)
+    const f2Geo2 = new THREE.PlaneGeometry(3, 20);
+    const f2_2 = new THREE.Mesh(f2Geo2, floorMat);
+    f2_2.rotation.x = -Math.PI / 2;
+    f2_2.position.set(28.5, 5.01, 10);
+    f2_2.receiveShadow = true;
+    scene.add(f2_2);
+
+    // 3. North Bridge (x: 24 to 27, z: 0 to 5)
+    const f2Geo3 = new THREE.PlaneGeometry(3, 5);
+    const f2_3 = new THREE.Mesh(f2Geo3, floorMat);
+    f2_3.rotation.x = -Math.PI / 2;
+    f2_3.position.set(25.5, 5.01, 2.5);
+    f2_3.receiveShadow = true;
+    scene.add(f2_3);
+
+    // 4. South Bridge (x: 24 to 27, z: 15 to 20)
+    const f2Geo4 = new THREE.PlaneGeometry(3, 5);
+    const f2_4 = new THREE.Mesh(f2Geo4, floorMat);
+    f2_4.rotation.x = -Math.PI / 2;
+    f2_4.position.set(25.5, 5.01, 17.5);
+    f2_4.receiveShadow = true;
+    scene.add(f2_4);
+
+    // Second Floor Ceiling (y=10)
+    const ceiling2Geo = new THREE.PlaneGeometry(40, 20);
+    const ceiling2 = new THREE.Mesh(ceiling2Geo, ceilingMat);
+    ceiling2.rotation.x = Math.PI / 2;
+    ceiling2.position.set(10, 10, 10);
+    scene.add(ceiling2);
+
+    // Second Floor Walls
+    // Helper for 2nd floor walls
+    function addWall2(x, z, w, d) {
+        const wall = new THREE.Mesh(wallGeo, wallMat);
+        wall.position.set(x, 5 + CONFIG.wallHeight / 2, z);
+        wall.scale.set(w, 1, d);
+        wall.castShadow = true;
+        wall.receiveShadow = true;
+        scene.add(wall);
+        state.walls.push(new THREE.Box3().setFromObject(wall));
+    }
+
+    // Outer Walls - Split for window openings in Room 1 (x: -10 to 10)
+    // North Wall (z=0): gap at x=0 (width 6m, from x=-3 to x=3)
+    addWall2(-6.5, 0, 7, wt);  // West segment: x=-10 to -3
+    addWall2(6.5, 0, 7, wt);   // Middle segment: x=3 to 10
+    addWall2(20, 0, 20, wt);   // East segment: x=10 to 30
+    // South Wall (z=20): gap at x=0 (width 6m, from x=-3 to x=3)
+    addWall2(-6.5, 20, 7, wt); // West segment: x=-10 to -3
+    addWall2(6.5, 20, 7, wt);  // Middle segment: x=3 to 10
+    addWall2(20, 20, 20, wt);  // East segment: x=10 to 30
+    // West Wall (x=-10): gap at z=10 (width 6m, from z=7 to z=13)
+    addWall2(-10, 3.5, wt, 7); // North segment: z=0 to 7
+    addWall2(-10, 16.5, wt, 7); // South segment: z=13 to 20
+    // East Wall (x=30): no window
+    addWall2(30, 10, wt, 20);
+
+    // Divider Wall (x=10) with Passage
+    // Passage at z=10 (width 4) -> Widen to width 6
+    // z range is 0 to 20. Center is 10.
+    // Gap: 7 to 13.
+    // Wall 1: z=0 to 7. Center 3.5. Width 7.
+    // Wall 2: z=13 to 20. Center 16.5. Width 7.
+    // Offset x slightly to avoid z-fighting with floor/ceiling edges if any
+    addWall2(10, 3.5, wt, 7);
+    addWall2(10, 16.5, wt, 7);
+
+    // --- Objects ---
+
+    // Table in Room 1 Upper (West)
+    const tableGeo = new THREE.BoxGeometry(3, 1, 2);
+    const tableMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+    const table = new THREE.Mesh(tableGeo, tableMat);
+    table.position.set(0, 5.5, 10);
+    scene.add(table);
+    state.obstacles.push(new THREE.Box3().setFromObject(table));
+
+    // Realistic Headphones with Podcast Functionality
+    const standGeo = new THREE.CylinderGeometry(0.05, 0.1, 0.3, 16);
+    const standMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.5, roughness: 0.3 });
+
+    const headbandGeo = new THREE.TorusGeometry(0.12, 0.015, 16, 32, Math.PI);
+    const headbandMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.3, roughness: 0.4 });
+
+    const earCupGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.04, 32);
+    const earCupMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.2, roughness: 0.5 });
+
+    const cushionGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.02, 32);
+    const cushionMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.9 });
+
+    function createHeadphones(x, y, z, podcastId, podcastTitle) {
+        const group = new THREE.Group();
+
+        // Stand
+        const stand = new THREE.Mesh(standGeo, standMat);
+        stand.position.y = -0.15;
+        group.add(stand);
+
+        // Headband
+        const headband = new THREE.Mesh(headbandGeo, headbandMat);
+        headband.rotation.z = Math.PI / 2;
+        headband.position.y = 0.12;
+        group.add(headband);
+
+        // Left ear cup
+        const leftCup = new THREE.Mesh(earCupGeo, earCupMat);
+        leftCup.position.set(-0.12, 0, 0);
+        leftCup.rotation.z = Math.PI / 2;
+        group.add(leftCup);
+
+        const leftCushion = new THREE.Mesh(cushionGeo, cushionMat);
+        leftCushion.position.set(-0.12, 0, 0.03);
+        leftCushion.rotation.z = Math.PI / 2;
+        group.add(leftCushion);
+
+        // Right ear cup
+        const rightCup = new THREE.Mesh(earCupGeo, earCupMat);
+        rightCup.position.set(0.12, 0, 0);
+        rightCup.rotation.z = Math.PI / 2;
+        group.add(rightCup);
+
+        const rightCushion = new THREE.Mesh(cushionGeo, cushionMat);
+        rightCushion.position.set(0.12, 0, 0.03);
+        rightCushion.rotation.z = Math.PI / 2;
+        group.add(rightCushion);
+
+        group.position.set(x, y, z);
+        group.userData = {
+            type: 'podcast',
+            videoId: podcastId,
+            title: podcastTitle
+        };
+
+        scene.add(group);
+        state.interactables.push(group);
+    }
+
+    // Create two podcast headphones
+    createHeadphones(-0.8, 6.15, 10, 'c7_WMRuzAvc', 'WirtschaftsWoche Podcast');
+    createHeadphones(0.8, 6.15, 10, 'c7_WMRuzAvc', 'WirtschaftsWoche Podcast');
+
+    // Table in Room 2 Upper (East) for Remote
+    const table2 = new THREE.Mesh(tableGeo, tableMat);
+    table2.position.set(20, 5.5, 10);
+    scene.add(table2);
+    state.obstacles.push(new THREE.Box3().setFromObject(table2));
+
+    // Windows for Room 1 Upper Floor - Floor to Ceiling
+    const windowGeo = new THREE.BoxGeometry(6, 5, 0.2);
+    const windowMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.3,
+        metalness: 0.9,
+        roughness: 0.1
+    });
+
+    const westWindow = new THREE.Mesh(windowGeo, windowMat);
+    westWindow.position.set(-10, 7.5, 10);
+    westWindow.rotation.y = Math.PI / 2;
+    scene.add(westWindow);
+
+    const northWindow = new THREE.Mesh(windowGeo, windowMat);
+    northWindow.position.set(0, 7.5, 0);
+    scene.add(northWindow);
+
+    const southWindow = new THREE.Mesh(windowGeo, windowMat);
+    southWindow.position.set(0, 7.5, 20);
+    scene.add(southWindow);
+
+    // Video Thumbnail on South Wall of Room 2 Upper
+    const videoId = 'VYbzclXAAd8';
+    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+
+    const thumbnailTexture = state.textureLoader.load(thumbnailUrl);
+    thumbnailTexture.encoding = THREE.sRGBEncoding;
+
+    const thumbnailGeo = new THREE.PlaneGeometry(8, 4.5);
+    const thumbnailMat = new THREE.MeshStandardMaterial({
+        map: thumbnailTexture,
+        roughness: 0.3,
+        metalness: 0.1
+    });
+    const thumbnailScreen = new THREE.Mesh(thumbnailGeo, thumbnailMat);
+    thumbnailScreen.position.set(20, 8, 19.6); // South wall of Room 2
+    thumbnailScreen.rotation.y = Math.PI;
+    thumbnailScreen.castShadow = true;
+    thumbnailScreen.receiveShadow = true;
+    scene.add(thumbnailScreen);
+
+    // Add a frame around the thumbnail
+    const thumbnailFrame = createFrame(8, 4.5);
+    thumbnailFrame.position.set(20, 8, 19.61);
+    thumbnailFrame.rotation.y = Math.PI;
+    scene.add(thumbnailFrame);
+
+    // Remote Control
+    const remoteGeo = new THREE.BoxGeometry(0.2, 0.05, 0.4);
+    const remoteMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+    const remote = new THREE.Mesh(remoteGeo, remoteMat);
+    remote.position.set(20, 6.05, 10);
+    remote.userData = {
+        type: 'remote',
+        videoId: 'VYbzclXAAd8' // YouTube video ID
+    };
+    scene.add(remote);
+    state.interactables.push(remote);
+
+    // Light Switch in Room 2 Upper
+    const swGeo = new THREE.BoxGeometry(0.2, 0.4, 0.1);
+    const swMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
+    const swHousing = new THREE.Mesh(swGeo, swMat);
+    const swBtn = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.05), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
+    swBtn.position.z = 0.05;
+    swHousing.add(swBtn);
+    swHousing.position.set(29.9, 6.5, 15);
+    swHousing.rotation.y = -Math.PI / 2;
+    swHousing.userData = { type: 'switch' };
+    scene.add(swHousing);
+    state.interactables.push(swHousing);
 
     addObstacles();
     placeCovers();
@@ -631,12 +1038,11 @@ function placeCovers() {
     const coverGeo = new THREE.PlaneGeometry(coverW, coverH);
     let coverIndex = 0;
 
-    function placeRow(startX, startZ, endX, endZ, facing, count) {
+    function placeRow(startX, startZ, endX, endZ, facing, count, margin = 2.0) {
         const dx = (endX - startX);
         const dz = (endZ - startZ);
         const len = Math.sqrt(dx * dx + dz * dz);
 
-        const margin = 2.0;
         const usableLen = len - 2 * margin;
         if (count <= 0) return;
 
@@ -659,7 +1065,8 @@ function placeCovers() {
 
             const mat = new THREE.MeshStandardMaterial({
                 roughness: 0.4,
-                color: 0xffffff
+                color: 0xffffff,
+                emissive: 0x555555 // Start lighter
             });
             mat.map = createCoverTexture(coverIndex, false, mat);
             const mesh = new THREE.Mesh(coverGeo, mat);
@@ -690,8 +1097,12 @@ function placeCovers() {
     // Room 2 (NE)
     // North Wall (Outer): z=0.35, x: 10->30. (9 covers)
     placeRow(10, 0.35, 30, 0.35, 0, 9);
-    // East Wall (Outer): x=29.65, z: 0->20. (9 covers)
-    placeRow(29.65, 0, 29.65, 20, -Math.PI / 2, 9);
+    // East Wall Part 1 (Outer): x=29.65, z=0->6. (2 covers: 34-35)
+    placeRow(29.65, 0, 29.65, 6, -Math.PI / 2, 2);
+    // Staircase Wall (West facing): x=23.9, z=5->15. (5 covers: 36-40) - Reduced margin for spacing
+    placeRow(23.9, 5, 23.9, 15, -Math.PI / 2, 5, 1.0);
+    // East Wall Part 2 (Outer): x=29.65, z=14->20. (2 covers: 41-42)
+    placeRow(29.65, 14, 29.65, 20, -Math.PI / 2, 2);
     // South Wall (Inner Solid): z=19.65, x: 15->25. (3 covers)
     placeRow(25, 19.65, 15, 19.65, Math.PI, 3);
     // West Wall (Inner Solid): x=10.35, z: 0->10. (4 covers)
@@ -718,11 +1129,11 @@ function placeCovers() {
     placeRow(9.65, 30, 9.65, 40, -Math.PI / 2, 4);
 }
 
-function checkCollision(newX, newZ) {
+function checkCollision(newX, newZ, newY = 0) {
     const playerBox = new THREE.Box3();
     const r = CONFIG.collisionRadius;
-    playerBox.min.set(newX - r, 0, newZ - r);
-    playerBox.max.set(newX + r, CONFIG.eyeHeight, newZ + r);
+    playerBox.min.set(newX - r, newY, newZ - r);
+    playerBox.max.set(newX + r, newY + CONFIG.eyeHeight, newZ + r);
 
     for (const box of state.walls) if (playerBox.intersectsBox(box)) return true;
     for (const box of state.obstacles) if (playerBox.intersectsBox(box)) return true;
@@ -770,6 +1181,37 @@ function closeOverlay() {
     document.body.requestPointerLock();
 }
 
+function closeVideo() {
+    if (state.isVideoPlaying) {
+        const videoIframe = document.getElementById('video-screen');
+
+        // Remove from wall if there
+        if (state.css3DObject) cssScene.remove(state.css3DObject);
+
+        // Reset styles (important for next time it starts on wall)
+        videoIframe.style.position = '';
+        videoIframe.style.top = '';
+        videoIframe.style.left = '';
+        videoIframe.style.transform = '';
+        videoIframe.style.width = '';
+        videoIframe.style.height = '';
+        videoIframe.style.maxWidth = '';
+        videoIframe.style.maxHeight = '';
+        videoIframe.style.zIndex = '';
+        videoIframe.style.border = '';
+        videoIframe.style.boxShadow = '';
+        videoIframe.style.pointerEvents = '';
+
+        // Hide and clear
+        videoIframe.style.display = 'none';
+        videoIframe.src = '';
+
+        // Reset state
+        state.isVideoPlaying = false;
+        state.isVideoPaused = false;
+    }
+}
+
 function updateMovement() {
     if (state.isOverlayOpen) return;
 
@@ -777,20 +1219,37 @@ function updateMovement() {
     if (state.keys.ArrowUp || state.keys.KeyW) moveStep = CONFIG.moveSpeed;
     if (state.keys.ArrowDown || state.keys.KeyS) moveStep = -CONFIG.moveSpeed;
 
-    if (state.keys.ArrowLeft || state.keys.KeyA) player.rot += CONFIG.rotSpeed;
-    if (state.keys.ArrowRight || state.keys.KeyD) player.rot -= CONFIG.rotSpeed;
+    let rotChange = 0;
+    if (state.keys.ArrowLeft || state.keys.KeyA) rotChange = CONFIG.rotSpeed;
+    if (state.keys.ArrowRight || state.keys.KeyD) rotChange = -CONFIG.rotSpeed;
+
+    // If video is playing and user tries to move, close the video
+    if (state.isVideoPlaying && (moveStep !== 0 || rotChange !== 0)) {
+        closeVideo();
+        return; // Don't move this frame, just close video
+    }
+
+    // If video is playing, lock movement
+    if (state.isVideoPlaying) return;
+
+    player.rot += rotChange;
 
     if (moveStep !== 0) {
         const nextX = player.x - Math.sin(player.rot) * moveStep;
         const nextZ = player.z - Math.cos(player.rot) * moveStep;
 
-        if (!checkCollision(nextX, player.z)) player.x = nextX;
-        if (!checkCollision(player.x, nextZ)) player.z = nextZ;
+        const targetY = getGroundHeight(nextX, nextZ);
+
+        if (!checkCollision(nextX, nextZ, targetY)) {
+            player.x = nextX;
+            player.z = nextZ;
+            player.y = targetY;
+        }
     }
 
     camera.position.x = player.x;
     camera.position.z = player.z;
-    camera.position.y = CONFIG.eyeHeight;
+    camera.position.y = player.y + CONFIG.eyeHeight;
     camera.rotation.y = player.rot;
 
     const frustum = new THREE.Frustum();
@@ -801,12 +1260,27 @@ function updateMovement() {
         const worldPos = new THREE.Vector3();
         cover.getWorldPosition(worldPos);
         if (worldPos.distanceTo(camera.position) < 8 && frustum.containsPoint(worldPos)) {
-            cover.userData.viewed = true;
-            state.viewedCovers.add(cover.userData.id);
-            cover.material.emissive.setHex(0x333333);
-            const pct = Math.floor((state.viewedCovers.size / CONFIG.totalCovers) * 100);
-            document.getElementById('completion-rate').innerText = `${pct}%`;
-            document.getElementById('progress-fill').style.width = `${pct}%`;
+            // Raycast check to ensure line of sight
+            const raycaster = new THREE.Raycaster();
+            const dir = worldPos.clone().sub(camera.position).normalize();
+            raycaster.set(camera.position, dir);
+
+            // Intersect with walls and obstacles
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            // Check if the first intersection is the cover itself (or very close to it)
+            if (intersects.length > 0) {
+                const firstHit = intersects[0];
+                // Allow some tolerance or check if hit object is the cover
+                if (firstHit.object === cover || firstHit.distance >= worldPos.distanceTo(camera.position) - 0.5) {
+                    cover.userData.viewed = true;
+                    state.viewedCovers.add(cover.userData.id);
+                    cover.material.emissive.setHex(0x000000);
+                    const pct = Math.floor((state.viewedCovers.size / CONFIG.totalCovers) * 100);
+                    document.getElementById('completion-rate').innerText = `${pct}%`;
+                    document.getElementById('progress-fill').style.width = `${pct}%`;
+                }
+            }
         }
     });
 }
@@ -851,6 +1325,38 @@ function checkInteraction() {
     if (closest) {
         if (closest.userData.type === 'switch') {
             toggleLights();
+        } else if (closest.userData.type === 'remote' || closest.userData.type === 'podcast') {
+            const videoId = closest.userData.videoId;
+
+            if (state.isVideoPlaying) {
+                // Stop video/podcast
+                closeVideo();
+            } else {
+                // Start video/podcast directly in fullscreen
+                const videoIframe = document.getElementById('video-screen');
+                videoIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1`;
+                videoIframe.style.display = 'block';
+
+                // Apply fullscreen styles immediately
+                videoIframe.style.position = 'fixed';
+                videoIframe.style.top = '50%';
+                videoIframe.style.left = '50%';
+                videoIframe.style.transform = 'translate(-50%, -50%)';
+                videoIframe.style.width = '90vw';
+                videoIframe.style.height = '90vh';
+                videoIframe.style.maxWidth = '1600px';
+                videoIframe.style.maxHeight = '900px';
+                videoIframe.style.zIndex = '10000';
+                videoIframe.style.border = '4px solid #e30613';
+                videoIframe.style.boxShadow = '0 0 50px rgba(227, 6, 19, 0.8)';
+                videoIframe.style.pointerEvents = 'auto';
+
+                state.isVideoPlaying = true;
+                state.isVideoPaused = false;
+
+                // Release pointer lock when video starts
+                document.exitPointerLock();
+            }
         } else {
             openOverlay(closest);
         }
@@ -904,6 +1410,10 @@ function updateInteractionPrompt() {
             } else {
                 prompt.innerText = 'Mehr Licht';
             }
+        } else if (closest.userData.type === 'remote') {
+            prompt.innerText = state.isVideoPlaying ? 'Video stoppen' : 'Video abspielen';
+        } else if (closest.userData.type === 'podcast') {
+            prompt.innerText = state.isVideoPlaying ? 'Podcast stoppen' : 'Podcast anhören';
         } else {
             prompt.innerText = 'Ansehen';
         }
@@ -918,12 +1428,14 @@ function animate() {
     updateMovement();
     updateInteractionPrompt();
     renderer.render(scene, camera);
+    cssRenderer.render(cssScene, camera);
 }
 
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    cssRenderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 init();
