@@ -91,7 +91,7 @@ body {
 
     0%,
     100% {
-        opacity: 0.5;
+        opacity: 0.7;
     }
 
     50% {
@@ -99,18 +99,9 @@ body {
     }
 }
 
-#canvas-container {
-    width: 100vw;
-    height: 100vh;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1;
-    touch-action: none;
-}
-
+/* UI Layer */
 #ui-layer {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
@@ -388,41 +379,30 @@ body {
     .overlay-content {
         flex-direction: column;
         padding: 15px;
-        /* Slightly more padding for touch targets */
         gap: 10px;
         width: 90vw;
         height: auto;
-        /* Let content define height */
         max-height: 85vh;
-        /* Cap height to fit in viewport */
         border-width: 1px;
         box-sizing: border-box;
         border-radius: 12px;
         overflow-y: auto;
-        /* Allow scrolling within the card if needed */
         position: relative;
-        /* For close button positioning */
         justify-content: flex-start;
-        /* Start from top */
-
-        /* Add padding at bottom so text can scroll above the joystick */
         padding-bottom: 200px;
         display: block;
     }
 
     #overlay-image-container {
         flex: 0 0 auto;
-        /* Don't grow, don't shrink */
         width: 100%;
         height: auto;
         max-height: 55vh;
-        /* Large image as requested */
         padding: 0;
         display: flex;
         justify-content: center;
         align-items: center;
         margin-top: 20px;
-        /* Space for close button */
     }
 
     #overlay-image-container canvas,
@@ -430,10 +410,8 @@ body {
         border-width: 2px;
         max-width: 100%;
         max-height: 55vh;
-        /* Match container max-height */
         object-fit: contain;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        /* Softer shadow */
     }
 
     #overlay-info {
@@ -443,9 +421,7 @@ body {
         padding: 0;
         min-height: 0;
         overflow: visible;
-        /* Let parent handle scrolling */
         display: block;
-        /* Standard block layout */
     }
 
     #overlay-title {
@@ -465,12 +441,10 @@ body {
 
     #close-btn {
         position: absolute;
-        /* Absolute to the card */
         top: 10px;
         right: 10px;
         font-size: 24px;
         background: rgba(164, 135, 135, 0.1);
-        /* User's custom color */
         width: 36px;
         height: 36px;
         border-radius: 50%;
