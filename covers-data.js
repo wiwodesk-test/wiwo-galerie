@@ -13,30 +13,20 @@ const COVERS_DATA = [
         highRes: "assets/covers/high/cover_01.jpg",
         title: "Die erste Ausgabe",
         description: "1926 startet die Vorgängerzeitschrift der WirtschaftsWoche in Berlin."
-    },
-    {
-        id: 1,
-        lowRes: "assets/covers/low/cover_02.jpg",
-        highRes: "assets/covers/high/cover_02.jpg",
-        title: "Magazine Issue #2",
-        description: "Celebrating our rich history and heritage."
-    },
-    {
-        id: 2,
-        lowRes: "assets/covers/low/cover_03.jpg",
-        highRes: "assets/covers/high/cover_03.jpg",
-        title: "Magazine Issue #3",
-        description: "Innovation and excellence in every page."
-    },
-    {
-        id: 3,
-        lowRes: "assets/covers/low/cover_04.jpg",
-        highRes: "assets/covers/high/cover_04.jpg",
-        title: "Magazine Issue #4",
-        description: "A journey through time and achievement."
     }
-    // Add covers 5-100 here following the same format
 ];
+
+// Generate entries for Cover 2 to Cover 42
+for (let i = 1; i < 42; i++) {
+    const num = (i + 1).toString().padStart(2, '0');
+    COVERS_DATA.push({
+        id: i,
+        lowRes: `assets/covers/low/cover_${num}.jpg`,
+        highRes: `assets/covers/high/cover_${num}.jpg`,
+        title: `Magazine Issue #${i + 1}`,
+        description: `Description for issue #${i + 1}`
+    });
+}
 
 // Export for use in script.js
 if (typeof module !== 'undefined' && module.exports) {
