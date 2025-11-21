@@ -6,7 +6,7 @@ const CONFIG = {
     wallHeight: 5,
     wallThickness: 0.5,
     roomSize: 20,
-    collisionRadius: 0.8, // Reduced to 0.8 for easier navigation
+    collisionRadius: 1.5, // Increased to keep player away from walls
     eyeHeight: 1.7,
     totalCovers: 100,
     interactionDist: 3.0,
