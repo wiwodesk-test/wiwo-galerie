@@ -79,94 +79,11 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <!DOCTYPE html>
-    <html lang="de">
-
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>WirtschaftsWoche Galerie</title>
-        <style>
-            /* Inline critical CSS to show loading screen immediately */
-            #loading-screen {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 10000;
-                transition: opacity 0.5s ease-out;
-            }
-
-            .loading-content {
-                text-align: center;
-                color: #C5A059;
-                font-family: 'Playfair Display', serif;
-            }
-
-            .logo {
-                font-size: 3rem;
-                font-weight: 700;
-                margin-bottom: 20px;
-                letter-spacing: 2px;
-            }
-
-            .spinner {
-                width: 40px;
-                height: 40px;
-                border: 3px solid rgba(197, 160, 89, 0.3);
-                border-radius: 50%;
-                border-top-color: #C5A059;
-                animation: spin 1s ease-in-out infinite;
-                margin: 0 auto 20px;
-            }
-
-            .loading-text {
-                font-family: 'Inter', sans-serif;
-                font-size: 0.9rem;
-                letter-spacing: 1px;
-                opacity: 0.8;
-            }
-
-            @keyframes spin {
-                to {
-                    transform: rotate(360deg);
-                }
-            }
-
-            body {
-                margin: 0;
-                overflow: hidden;
-                background: #111;
-            }
-        </style>
-        <link rel="stylesheet" href="style.css">
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap"
-            rel="stylesheet">
-
-        <!-- Three.js CDN -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
-
-        <!-- Post-Processing -->
-        <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js"></script>
-        <script
-            src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SimplexNoise.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-    </head>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SimplexNoise.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+</head>
 
 <body>
     <!-- Loading Screen -->
@@ -174,7 +91,55 @@
         <div class="loading-content">
             <div class="logo">WiWo</div>
             <div class="spinner"></div>
-            <div class="loading-text">Lade Galerie...</div>
+            <div class="loading-text">Lade Galerie ...</div>
+        </div>
+    </div>
+
+    <!-- Welcome Screen -->
+    <div id="welcome-screen" class="hidden">
+        <div class="welcome-content">
+            <h1 class="welcome-title">100 Jahre WirtschaftsWoche</h1>
+            <p class="welcome-text">Die WirtschaftsWoche feiert 100-jähriges Jubiläum.<br>Schauen Sie sich 100 Cover aus
+                unserer Geschichte an.</p>
+
+            <div class="instruction-container desktop-only">
+                <div class="icon-box">
+                    <!-- CSS/SVG Arrow Keys -->
+                    <svg width="100" height="60" viewBox="0 0 100 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="35" y="0" width="30" height="30" rx="4" stroke="#C5A059" stroke-width="2" />
+                        <path d="M50 10L50 20M50 10L45 15M50 10L55 15" stroke="#C5A059" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+
+                        <rect x="0" y="35" width="30" height="25" rx="4" stroke="#C5A059" stroke-width="2" />
+                        <path d="M15 47L5 47M5 47L10 42M5 47L10 52" stroke="#C5A059" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+
+                        <rect x="35" y="35" width="30" height="25" rx="4" stroke="#C5A059" stroke-width="2" />
+                        <path d="M50 42L50 52M50 52L45 47M50 52L55 47" stroke="#C5A059" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+
+                        <rect x="70" y="35" width="30" height="25" rx="4" stroke="#C5A059" stroke-width="2" />
+                        <path d="M85 47L95 47M95 47L90 42M95 47L90 52" stroke="#C5A059" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <p class="instruction-text">Nutzen Sie die Pfeiltasten zur Navigation</p>
+            </div>
+
+            <div class="instruction-container mobile-only">
+                <div class="icon-box">
+                    <!-- CSS/SVG Joystick -->
+                    <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="30" cy="30" r="28" stroke="#C5A059" stroke-width="2" stroke-dasharray="4 4" />
+                        <circle cx="30" cy="30" r="12" fill="#C5A059" fill-opacity="0.2" stroke="#C5A059"
+                            stroke-width="2" />
+                        <circle cx="30" cy="30" r="4" fill="#C5A059" />
+                    </svg>
+                </div>
+                <p class="instruction-text">Nutzen Sie den Joystick zur Navigation</p>
+            </div>
+
+            <button id="start-btn" class="cta-button">Starten</button>
         </div>
     </div>
 
@@ -188,7 +153,7 @@
         <div id="info-panel">
             <h1>WiWo Galerie</h1>
             <p>Nutze die <strong>Pfeiltasten</strong> zum Bewegen.</p>
-            <p>Drücke <strong>Enter</strong> für mehr Infos.</p>
+            <p><strong>Enter</strong> für mehr Infos zu einem Cover.</p>
         </div>
 
         <div id="stats-panel">
