@@ -2,7 +2,8 @@
     --color-black: #050505;
     --color-dark-grey: #111111;
     --color-white: #F0F0F0;
-    --color-accent: #C5A059; /* Gold */
+    --color-accent: #C5A059;
+    /* Gold */
     --color-accent-hover: #E5C079;
     --font-main: 'Inter', sans-serif;
     --font-serif: 'Playfair Display', serif;
@@ -94,8 +95,15 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
+
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
 }
 
 /* UI Layer */
@@ -120,7 +128,7 @@ body {
     border-left: 2px solid var(--color-accent);
     max-width: 350px;
     pointer-events: auto;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 #info-panel h1 {
@@ -152,7 +160,7 @@ body {
     min-width: 280px;
     pointer-events: auto;
     backdrop-filter: blur(10px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .stat-label {
@@ -190,7 +198,7 @@ body {
 
 /* Overlay - Museum Style */
 #cover-overlay {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
@@ -200,70 +208,40 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 20;
-    pointer-events: auto;
-    opacity: 1;
     transition: opacity 0.5s ease;
 }
 
 #cover-overlay.hidden {
     opacity: 0;
     pointer-events: none;
-    visibility: hidden;
 }
 
 .overlay-content {
-    background: #0a0a0a;
-    padding: 60px;
-    border: 1px solid #333;
-    text-align: center;
-    max-width: none;
-    max-height: none;
-    width: 90vw;
-    height: 90vh;
-    position: relative;
-    box-shadow: 0 0 100px rgba(0, 0, 0, 0.9);
     display: flex;
     flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 60px;
-}
-
-#close-btn {
-    position: absolute;
-    top: 30px;
-    right: 30px;
-    background: none;
-    border: none;
-    color: #555;
-    font-size: 30px;
-    cursor: pointer;
-    z-index: 10;
-    pointer-events: auto;
-    transition: color 0.3s ease;
-}
-
-#close-btn:hover {
-    color: var(--color-accent);
+    width: 90%;
+    max-width: 1400px;
+    height: 80vh;
+    background: #050505;
+    border: 1px solid #222;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+    position: relative;
 }
 
 #overlay-image-container {
-    flex: 2;
+    flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100%;
-    overflow: hidden;
-    background: #050505;
-    border: 1px solid #222;
+    background: #000;
+    padding: 20px;
 }
 
-#overlay-image-container canvas,
 #overlay-image-container img {
-    max-width: 90%;
-    max-height: 90%;
+    max-width: 100%;
+    max-height: 100%;
     object-fit: contain;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 #overlay-info {
@@ -292,6 +270,54 @@ body {
     margin-bottom: 40px;
     color: #999;
     font-weight: 300;
+}
+
+#close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 48px;
+    cursor: pointer;
+    z-index: 21;
+    transition: transform 0.2s;
+}
+
+#close-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Video Close Button */
+#video-close-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid var(--color-accent);
+    color: var(--color-accent);
+    font-size: 48px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+#video-close-btn:hover {
+    background: var(--color-accent);
+    color: #000;
+    transform: scale(1.1);
+}
+
+#video-close-btn.hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* Interaction Prompt - Elegant Button */
@@ -368,7 +394,8 @@ body {
 }
 
 /* Mobile Responsive */
-@media (pointer: coarse), (max-width: 768px) {
+@media (pointer: coarse),
+(max-width: 768px) {
     #mobile-controls {
         display: flex;
     }
@@ -376,7 +403,7 @@ body {
     #info-panel {
         display: none;
     }
-    
+
     #ui-layer {
         padding: 1rem;
     }
@@ -392,7 +419,7 @@ body {
         bottom: 30%;
         top: auto;
         transform: translate(-50%, 0);
-        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
     }
 
     #interaction-prompt.hidden {
@@ -423,10 +450,10 @@ body {
         background: transparent;
         border: none;
     }
-    
+
     #overlay-image-container canvas,
     #overlay-image-container img {
-        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
     }
 
     #overlay-info {
@@ -447,7 +474,7 @@ body {
         top: 15px;
         right: 15px;
         color: #fff;
-        background: rgba(255,255,255,0.1);
+        background: rgba(255, 255, 255, 0.1);
         width: 40px;
         height: 40px;
         border-radius: 50%;
@@ -456,7 +483,7 @@ body {
         align-items: center;
         font-size: 24px;
     }
-    
+
     #stats-panel {
         position: fixed;
         top: 15px;
@@ -484,6 +511,7 @@ body {
     }
 
     #stats-panel .progress-bar {
-        display: none; /* Hide bar on mobile to save space */
+        display: none;
+        /* Hide bar on mobile to save space */
     }
 }
