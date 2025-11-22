@@ -6,7 +6,7 @@ const CONFIG = {
     wallHeight: 5,
     wallThickness: 0.5,
     roomSize: 20,
-    collisionRadius: 1.3, // Standard "Personal Space" radius
+    collisionRadius: 1, // Standard "Personal Space" radius
     stairRadius: 0.3, // Very tight radius for smooth stair navigation
     eyeHeight: 1.7,
     totalCovers: 100,
@@ -145,6 +145,7 @@ function hideLoadingScreen() {
 
     const loadingScreen = document.getElementById('loading-screen');
     const welcomeScreen = document.getElementById('welcome-screen');
+    const uiLayer = document.getElementById('ui-layer');
 
     if (loadingScreen) {
         loadingScreen.classList.add('hidden');
@@ -153,13 +154,25 @@ function hideLoadingScreen() {
     if (welcomeScreen) {
         welcomeScreen.classList.remove('hidden');
     }
+
+    // Hide UI layer while welcome screen is visible
+    if (uiLayer) {
+        uiLayer.classList.add('hidden');
+    }
 }
 
 function startExperience() {
     state.experienceStarted = true;
     const welcomeScreen = document.getElementById('welcome-screen');
+    const uiLayer = document.getElementById('ui-layer');
+
     if (welcomeScreen) {
         welcomeScreen.classList.add('hidden');
+    }
+
+    // Show UI layer
+    if (uiLayer) {
+        uiLayer.classList.remove('hidden');
     }
 
     // Ensure gallery is marked ready
@@ -364,6 +377,24 @@ function init() {
     document.getElementById('interaction-prompt').addEventListener('touchstart', (e) => {
         e.preventDefault();
         checkInteraction();
+    });
+
+    // Video close button
+    document.getElementById('video-close-btn').addEventListener('click', () => {
+        closeVideo();
+    });
+    document.getElementById('video-close-btn').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        closeVideo();
+    });
+
+    // Overlay close button
+    document.getElementById('close-btn').addEventListener('click', () => {
+        closeOverlay();
+    });
+    document.getElementById('close-btn').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        closeOverlay();
     });
     // Force hide loading screen after 5 seconds just in case
     setTimeout(() => {
@@ -1053,59 +1084,161 @@ function buildGallery() {
     const tableGeo = new THREE.BoxGeometry(3, 1, 2);
     const tableMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
     const table = new THREE.Mesh(tableGeo, tableMat);
-    table.position.set(0, 5.5, 10);
+    table.position.set(0, 5 + 0.5, 10); // y=5 is floor, +0.5 for half table height
     scene.add(table);
     state.obstacles.push(new THREE.Box3().setFromObject(table));
 
-    // Realistic Headphones with Podcast Functionality
-    const standGeo = new THREE.CylinderGeometry(0.05, 0.1, 0.3, 16);
-    const standMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.5, roughness: 0.3 });
-
-    const headbandGeo = new THREE.TorusGeometry(0.12, 0.015, 16, 32, Math.PI);
-    const headbandMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.3, roughness: 0.4 });
-
-    const earCupGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.04, 32);
-    const earCupMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.2, roughness: 0.5 });
-
-    const cushionGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.02, 32);
-    const cushionMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.9 });
+    // Professional Headphones with Podcast Functionality
 
     function createHeadphones(x, y, z, podcastId, podcastTitle) {
         const group = new THREE.Group();
 
-        // Stand
-        const stand = new THREE.Mesh(standGeo, standMat);
-        stand.position.y = -0.15;
-        group.add(stand);
+        // Professional materials
+        const metalMat = new THREE.MeshStandardMaterial({
+            color: 0x2a2a2a,
+            metalness: 0.8,
+            roughness: 0.2
+        });
 
-        // Headband
-        const headband = new THREE.Mesh(headbandGeo, headbandMat);
+        const plasticMat = new THREE.MeshStandardMaterial({
+            color: 0x1a1a1a,
+            metalness: 0.1,
+            roughness: 0.4
+        });
+
+        const cushionMat = new THREE.MeshStandardMaterial({
+            color: 0x0a0a0a,
+            roughness: 0.9,
+            metalness: 0
+        });
+
+        const accentMat = new THREE.MeshStandardMaterial({
+            color: 0xC5A059, // Gold accent
+            metalness: 0.9,
+            roughness: 0.1
+        });
+
+        // === STAND ===
+        // Weighted base
+        const baseGeo = new THREE.CylinderGeometry(0.12, 0.14, 0.03, 32);
+        const base = new THREE.Mesh(baseGeo, metalMat);
+        base.position.y = 0.015;
+        group.add(base);
+
+        // Main stand pole
+        const poleGeo = new THREE.CylinderGeometry(0.018, 0.022, 0.35, 16);
+        const pole = new THREE.Mesh(poleGeo, metalMat);
+        pole.position.y = 0.205;
+        group.add(pole);
+
+        // Stand top (headband rest)
+        const standTopGeo = new THREE.CylinderGeometry(0.025, 0.018, 0.04, 16);
+        const standTop = new THREE.Mesh(standTopGeo, metalMat);
+        standTop.position.y = 0.4;
+        group.add(standTop);
+
+        // Decorative ring on pole
+        const ringGeo = new THREE.TorusGeometry(0.03, 0.008, 8, 16);
+        const ring = new THREE.Mesh(ringGeo, accentMat);
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = 0.1;
+        group.add(ring);
+
+        // === HEADBAND ===
+        // Main curved headband (arc)
+        const headbandCurve = new THREE.EllipseCurve(
+            0, 0,
+            0.14, 0.14,
+            Math.PI, 0,
+            false,
+            0
+        );
+        const points = headbandCurve.getPoints(50);
+        const headbandPath = new THREE.CatmullRomCurve3(
+            points.map(p => new THREE.Vector3(p.x, p.y, 0))
+        );
+
+        const headbandGeo = new THREE.TubeGeometry(headbandPath, 50, 0.012, 8, false);
+        const headband = new THREE.Mesh(headbandGeo, plasticMat);
         headband.rotation.z = Math.PI / 2;
-        headband.position.y = 0.12;
+        headband.position.y = 0.42;
         group.add(headband);
 
-        // Left ear cup
-        const leftCup = new THREE.Mesh(earCupGeo, earCupMat);
-        leftCup.position.set(-0.12, 0, 0);
-        leftCup.rotation.z = Math.PI / 2;
+        // Inner padding on headband
+        const paddingGeo = new THREE.TubeGeometry(headbandPath, 50, 0.015, 8, false);
+        const padding = new THREE.Mesh(paddingGeo, cushionMat);
+        padding.rotation.z = Math.PI / 2;
+        padding.position.set(0, 0.42, -0.005);
+        padding.scale.set(0.9, 0.9, 0.5);
+        group.add(padding);
+
+        // === EAR CUPS (Left and Right) ===
+        const createEarCup = (side) => {
+            const cupGroup = new THREE.Group();
+            const xPos = side === 'left' ? -0.14 : 0.14;
+
+            // Yoke (connecting arm from headband)
+            const yokeGeo = new THREE.BoxGeometry(0.015, 0.08, 0.025);
+            const yoke = new THREE.Mesh(yokeGeo, metalMat);
+            yoke.position.set(xPos, 0.38, 0);
+            cupGroup.add(yoke);
+
+            // Swivel joint
+            const swivelGeo = new THREE.SphereGeometry(0.02, 16, 16);
+            const swivel = new THREE.Mesh(swivelGeo, metalMat);
+            swivel.position.set(xPos, 0.34, 0);
+            cupGroup.add(swivel);
+
+            // Outer cup housing (main body)
+            const cupBodyGeo = new THREE.CylinderGeometry(0.065, 0.07, 0.06, 32);
+            const cupBody = new THREE.Mesh(cupBodyGeo, plasticMat);
+            cupBody.rotation.z = Math.PI / 2;
+            cupBody.position.set(xPos, 0.34, 0);
+            cupGroup.add(cupBody);
+
+            // Mesh grille (speaker cover)
+            const grilleGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.005, 32);
+            const grilleMat = new THREE.MeshStandardMaterial({
+                color: 0x0a0a0a,
+                metalness: 0.6,
+                roughness: 0.4
+            });
+            const grille = new THREE.Mesh(grilleGeo, grilleMat);
+            grille.rotation.z = Math.PI / 2;
+            grille.position.set(xPos, 0.34, side === 'left' ? 0.031 : -0.031);
+            cupGroup.add(grille);
+
+            // Ear cushion (memory foam)
+            const cushionGeo = new THREE.TorusGeometry(0.055, 0.015, 16, 32);
+            const cushion = new THREE.Mesh(cushionGeo, cushionMat);
+            cushion.rotation.y = Math.PI / 2;
+            cushion.position.set(xPos, 0.34, side === 'left' ? 0.035 : -0.035);
+            cupGroup.add(cushion);
+
+            // Brand logo (gold accent)
+            const logoGeo = new THREE.CircleGeometry(0.015, 16);
+            const logo = new THREE.Mesh(logoGeo, accentMat);
+            logo.rotation.y = side === 'left' ? -Math.PI / 2 : Math.PI / 2;
+            logo.position.set(xPos, 0.36, side === 'left' ? -0.031 : 0.031);
+            cupGroup.add(logo);
+
+            // Detail ring around cup
+            const detailRingGeo = new THREE.TorusGeometry(0.068, 0.003, 8, 32);
+            const detailRing = new THREE.Mesh(detailRingGeo, accentMat);
+            detailRing.rotation.y = Math.PI / 2;
+            detailRing.position.set(xPos, 0.34, 0);
+            cupGroup.add(detailRing);
+
+            return cupGroup;
+        };
+
+        const leftCup = createEarCup('left');
         group.add(leftCup);
 
-        const leftCushion = new THREE.Mesh(cushionGeo, cushionMat);
-        leftCushion.position.set(-0.12, 0, 0.03);
-        leftCushion.rotation.z = Math.PI / 2;
-        group.add(leftCushion);
-
-        // Right ear cup
-        const rightCup = new THREE.Mesh(earCupGeo, earCupMat);
-        rightCup.position.set(0.12, 0, 0);
-        rightCup.rotation.z = Math.PI / 2;
+        const rightCup = createEarCup('right');
         group.add(rightCup);
 
-        const rightCushion = new THREE.Mesh(cushionGeo, cushionMat);
-        rightCushion.position.set(0.12, 0, 0.03);
-        rightCushion.rotation.z = Math.PI / 2;
-        group.add(rightCushion);
-
+        // Position the entire headphone set
         group.position.set(x, y, z);
         group.userData = {
             type: 'podcast',
@@ -1123,7 +1256,7 @@ function buildGallery() {
 
     // Table in Room 2 Upper (East) for Remote
     const table2 = new THREE.Mesh(tableGeo, tableMat);
-    table2.position.set(20, 5.5, 10);
+    table2.position.set(20, 5 + 0.5, 10); // y=5 is floor, +0.5 for half table height
     scene.add(table2);
     state.obstacles.push(new THREE.Box3().setFromObject(table2));
 
@@ -1168,7 +1301,11 @@ function buildGallery() {
     thumbnailScreen.rotation.y = Math.PI;
     thumbnailScreen.castShadow = true;
     thumbnailScreen.receiveShadow = true;
+    thumbnailScreen.userData = {
+        videoId: videoId // Add video ID so it can be interacted with
+    };
     scene.add(thumbnailScreen);
+    state.covers.push(thumbnailScreen); // Add to covers so it can be interacted with
 
     // Add a frame around the thumbnail
     const thumbnailFrame = createFrame(8, 4.5);
@@ -1326,27 +1463,133 @@ function loadHighQualityAssets() {
     loadAndApply('assets/textures/pot_clay.png', 'pot');
 }
 
-function createFrame(width, height) {
-    const frameShape = new THREE.Shape();
-    const w = width + 0.2;
-    const h = height + 0.2;
-    frameShape.moveTo(-w / 2, -h / 2);
-    frameShape.lineTo(w / 2, -h / 2);
-    frameShape.lineTo(w / 2, h / 2);
-    frameShape.lineTo(-w / 2, h / 2);
-    frameShape.lineTo(-w / 2, -h / 2);
+function createFrame(width, height, coverNumber = null) {
+    const group = new THREE.Group();
 
-    const hole = new THREE.Path();
-    hole.moveTo(-width / 2, -height / 2);
-    hole.lineTo(width / 2, -height / 2);
-    hole.lineTo(width / 2, height / 2);
-    hole.lineTo(-width / 2, height / 2);
-    hole.lineTo(-width / 2, -height / 2);
-    frameShape.holes.push(hole);
+    // Frame dimensions
+    const frameWidth = 0.15; // Thicker frame
+    const frameDepth = 0.12;
+    const w = width + frameWidth * 2;
+    const h = height + frameWidth * 2;
 
-    const geo = new THREE.ExtrudeGeometry(frameShape, { depth: 0.1, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02 });
-    const mat = new THREE.MeshStandardMaterial({ color: 0x5C4033, roughness: 0.8 });
-    return new THREE.Mesh(geo, mat);
+    // Rich wooden material
+    const woodMat = new THREE.MeshStandardMaterial({
+        color: 0x4A2511, // Dark walnut
+        roughness: 0.6,
+        metalness: 0.1
+    });
+
+    // Gold accent material
+    const goldMat = new THREE.MeshStandardMaterial({
+        color: 0xC5A059,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+
+    // Create main frame pieces
+    const topGeo = new THREE.BoxGeometry(w, frameWidth, frameDepth);
+    const sideGeo = new THREE.BoxGeometry(frameWidth, height, frameDepth);
+
+    const topFrame = new THREE.Mesh(topGeo, woodMat);
+    topFrame.position.y = (height + frameWidth) / 2;
+    group.add(topFrame);
+
+    const bottomFrame = new THREE.Mesh(topGeo, woodMat);
+    bottomFrame.position.y = -(height + frameWidth) / 2;
+    group.add(bottomFrame);
+
+    const leftFrame = new THREE.Mesh(sideGeo, woodMat);
+    leftFrame.position.x = -(width + frameWidth) / 2;
+    group.add(leftFrame);
+
+    const rightFrame = new THREE.Mesh(sideGeo, woodMat);
+    rightFrame.position.x = (width + frameWidth) / 2;
+    group.add(rightFrame);
+
+    // Decorative corner ornaments
+    const cornerSize = 0.08;
+    const cornerGeo = new THREE.SphereGeometry(cornerSize, 8, 8);
+
+    const corners = [
+        [(width + frameWidth) / 2, (height + frameWidth) / 2],
+        [-(width + frameWidth) / 2, (height + frameWidth) / 2],
+        [(width + frameWidth) / 2, -(height + frameWidth) / 2],
+        [-(width + frameWidth) / 2, -(height + frameWidth) / 2]
+    ];
+
+    corners.forEach(([x, y]) => {
+        const corner = new THREE.Mesh(cornerGeo, goldMat);
+        corner.position.set(x, y, frameDepth / 2);
+        group.add(corner);
+
+        // Decorative pyramids
+        const pyramidGeo = new THREE.ConeGeometry(0.03, 0.06, 4);
+        const pyramid = new THREE.Mesh(pyramidGeo, goldMat);
+        pyramid.position.set(x * 0.9, y * 0.9, frameDepth / 2 + 0.02);
+        pyramid.rotation.x = Math.PI;
+        group.add(pyramid);
+    });
+
+    // Inner bevel
+    const bevelGeo = new THREE.TorusGeometry(
+        Math.min(width, height) / 2.5,
+        0.015,
+        8,
+        32
+    );
+    const bevel = new THREE.Mesh(bevelGeo, goldMat);
+    bevel.position.z = frameDepth / 2 - 0.01;
+    bevel.scale.set(width / height, 1, 1);
+    group.add(bevel);
+
+    // Numbered brass plate
+    if (coverNumber !== null) {
+        const plateWidth = 0.4;
+        const plateHeight = 0.12;
+        const plateGeo = new THREE.BoxGeometry(plateWidth, plateHeight, 0.02);
+        const brassMat = new THREE.MeshStandardMaterial({
+            color: 0xB5A642,
+            roughness: 0.4,
+            metalness: 0.7
+        });
+
+        const plate = new THREE.Mesh(plateGeo, brassMat);
+        plate.position.set(0, -(height + frameWidth) / 2 - 0.15, frameDepth / 2 + 0.01);
+        group.add(plate);
+
+        // Number text
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+
+        ctx.fillStyle = '#B5A642';
+        ctx.fillRect(0, 0, 256, 128);
+
+        ctx.strokeStyle = '#8B7355';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(2, 2, 252, 124);
+
+        ctx.fillStyle = '#2C1810';
+        ctx.font = 'bold 72px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`№ ${coverNumber + 1}`, 128, 64);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const textMat = new THREE.MeshStandardMaterial({
+            map: texture,
+            roughness: 0.3,
+            metalness: 0.6
+        });
+
+        const textGeo = new THREE.PlaneGeometry(plateWidth - 0.02, plateHeight - 0.02);
+        const textMesh = new THREE.Mesh(textGeo, textMat);
+        textMesh.position.set(0, -(height + frameWidth) / 2 - 0.15, frameDepth / 2 + 0.02);
+        group.add(textMesh);
+    }
+
+    return group;
 }
 
 function createCoverTexture(index, highRes = false, material = null) {
@@ -1447,7 +1690,7 @@ function placeCovers() {
             group.position.set(x, CONFIG.eyeHeight, z);
             group.rotation.y = facing;
 
-            const frame = createFrame(coverW, coverH);
+            const frame = createFrame(coverW, coverH, coverIndex);
             frame.position.z = 0;
             group.add(frame);
 
@@ -1870,7 +2113,8 @@ function checkInteraction() {
     if (closest) {
         if (closest.userData.type === 'switch') {
             toggleLights();
-        } else if (closest.userData.type === 'remote' || closest.userData.type === 'podcast') {
+        } else if (closest.userData.type === 'remote' || closest.userData.type === 'podcast' || closest.userData.videoId || closest.userData.podcastId) {
+            // Handle remote, podcast headphones, or covers with video/podcast
             const videoId = closest.userData.videoId;
 
             if (state.isVideoPlaying) {
@@ -1959,6 +2203,12 @@ function updateInteractionPrompt() {
         } else if (closest.userData.type === 'remote') {
             prompt.innerText = state.isVideoPlaying ? 'Video stoppen' : 'Video abspielen';
         } else if (closest.userData.type === 'podcast') {
+            prompt.innerText = state.isVideoPlaying ? 'Podcast stoppen' : 'Podcast anhören';
+        } else if (closest.userData.videoId) {
+            // Cover with video
+            prompt.innerText = state.isVideoPlaying ? 'Video stoppen' : 'Video abspielen';
+        } else if (closest.userData.podcastId) {
+            // Cover with podcast
             prompt.innerText = state.isVideoPlaying ? 'Podcast stoppen' : 'Podcast anhören';
         } else {
             prompt.innerText = 'Ansehen';
