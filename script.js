@@ -6,7 +6,8 @@ const CONFIG = {
     wallHeight: 5,
     wallThickness: 0.5,
     roomSize: 20,
-    collisionRadius: 1.5, // Increased to keep player away from walls
+    collisionRadius: 1.3, // Standard "Personal Space" radius
+    stairRadius: 0.3, // Very tight radius for smooth stair navigation
     eyeHeight: 1.7,
     totalCovers: 100,
     interactionDist: 3.0,
@@ -86,16 +87,24 @@ function getGroundHeight(x, z) {
 
 function init() {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xdddddd);
-    scene.fog = new THREE.Fog(0xdddddd, 0, 50);
+    scene.background = new THREE.Color(0x87ceeb); // Sky blue background
+    scene.fog = new THREE.Fog(0xb0d4f1, 10, 100); // Light blue fog for spring day
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        powerPreference: "high-performance",
+        stencil: false
+    });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap at 2x for performance
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;  // Soft, realistic shadows
     renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; // Hollywood-grade color
+    renderer.toneMappingExposure = 1.2;                 // Bright museum lighting
+    renderer.physicallyCorrectLights = true;            // Realistic light falloff
     document.getElementById('canvas-container').appendChild(renderer.domElement);
 
     // CSS3D Renderer for YouTube video
@@ -209,6 +218,119 @@ function init() {
         }
     }, 5000);
 
+    // 🎬 CINEMATIC POST-PROCESSING SETUP
+    try {
+        const renderScene = new THREE.RenderPass(scene, camera);
+
+        // SSAO - Screen Space Ambient Occlusion for depth
+        const ssaoPass = new THREE.SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
+        ssaoPass.kernelRadius = 16;
+        ssaoPass.minDistance = 0.001;
+        ssaoPass.maxDistance = 0.1;
+        ssaoPass.output = THREE.SSAOPass.OUTPUT.Default;
+
+        // Unreal Bloom - Subtle glow on bright surfaces
+        const bloomPass = new THREE.UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            0.4,  // strength
+            0.5,  // radius
+            0.85  // threshold
+        );
+
+        // Film Grain - Cinematic texture
+        const filmGrainPass = new THREE.ShaderPass({
+            uniforms: {
+                tDiffuse: { value: null },
+                time: { value: 0 },
+                nIntensity: { value: 0.15 },
+                sIntensity: { value: 0.05 },
+                sCount: { value: 4096 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D tDiffuse;
+                uniform float time;
+                uniform float nIntensity;
+                uniform float sIntensity;
+                uniform float sCount;
+                varying vec2 vUv;
+
+                float rand(vec2 co) {
+                    return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+                }
+
+                void main() {
+                    vec4 color = texture2D(tDiffuse, vUv);
+                    
+                    // Noise grain
+                    float x = (vUv.x + 4.0) * (vUv.y + 4.0) * (time * 10.0);
+                    vec4 grain = vec4(mod((mod(x, 13.0) + 1.0) * (mod(x, 123.0) + 1.0), 0.01) - 0.005) * nIntensity;
+                    
+                    // Scanlines
+                    float scanline = clamp(0.95 + 0.05 * cos(3.14 * (vUv.y + 0.008 * time) * 240.0 * 1.0), 0.0, 1.0);
+                    float s = pow(scanline, sIntensity);
+                    
+                    color += grain;
+                    color *= s;
+                    
+                    gl_FragColor = color;
+                }
+            `
+        });
+
+        // Vignette - Classic cinema framing
+        const vignettePass = new THREE.ShaderPass({
+            uniforms: {
+                tDiffuse: { value: null },
+                offset: { value: 1.0 },
+                darkness: { value: 1.0 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D tDiffuse;
+                uniform float offset;
+                uniform float darkness;
+                varying vec2 vUv;
+
+                void main() {
+                    vec4 texel = texture2D(tDiffuse, vUv);
+                    vec2 uv = (vUv - vec2(0.5)) * vec2(offset);
+                    gl_FragColor = vec4(mix(texel.rgb, vec3(1.0 - darkness), dot(uv, uv)), texel.a);
+                }
+            `
+        });
+
+        composer = new THREE.EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(ssaoPass);
+        composer.addPass(bloomPass);
+        composer.addPass(filmGrainPass);
+        composer.addPass(vignettePass);
+
+        // Animate film grain
+        setInterval(() => {
+            if (filmGrainPass.uniforms.time) {
+                filmGrainPass.uniforms.time.value += 0.016;
+            }
+        }, 16);
+
+        console.log('✅ Cinematic post-processing enabled');
+    } catch (error) {
+        console.warn('Post-processing not available:', error);
+    }
+
     animate();
 }
 
@@ -241,11 +363,6 @@ function onKeyDown(e) {
         return; // Block all other keys when video is playing
     }
 
-    if (state.isOverlayOpen) {
-        if (e.code === 'Escape') closeOverlay();
-        return;
-    }
-
     if (state.keys.hasOwnProperty(e.code)) state.keys[e.code] = true;
 
     if (e.code === 'Enter') {
@@ -254,25 +371,44 @@ function onKeyDown(e) {
 }
 
 function setupLighting() {
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x888888, 0.5); // Moderate ambient for daylight
     hemiLight.position.set(0, 20, 0);
     hemiLight.name = 'mainHemi';
     scene.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const dirLight = new THREE.DirectionalLight(0xfff4e6, 0.8); // Warm sunlight, moderate brightness
     dirLight.position.set(10, 30, 10);
     dirLight.castShadow = true;
+
+    // STABLE SHADOWS - No Flickering
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.left = -50;
+    dirLight.shadow.camera.right = 50;
+    dirLight.shadow.camera.top = 50;
+    dirLight.shadow.camera.bottom = -50;
+    dirLight.shadow.camera.near = 0.5;
+    dirLight.shadow.camera.far = 100;
+    dirLight.shadow.bias = -0.001;         // Stable shadows
+    dirLight.shadow.normalBias = 0.05;     // Prevent flickering
     dirLight.name = 'mainDir';
     scene.add(dirLight);
 
-    const lightColor = 0xffaa77;
-    const positions = [[0, 10], [20, 10], [0, 30]]; // Removed Room 4 light
+    const lightColor = 0xfff4e6; // Warm white for daylight
+    const positions = [[0, 10], [20, 10], [0, 30]];
     positions.forEach((pos, i) => {
-        const pl = new THREE.PointLight(lightColor, 0.5, 20);
+        const pl = new THREE.PointLight(lightColor, 0.4, 18); // Moderate brightness
         pl.position.set(pos[0], 4, pos[1]);
         pl.name = `roomLight_${i}`;
+        scene.add(pl);
+    });
+
+    // Upper Floor Lights (y=9)
+    const upperPositions = [[0, 10], [20, 10]];
+    upperPositions.forEach((pos, i) => {
+        const pl = new THREE.PointLight(lightColor, 0.4, 18);
+        pl.position.set(pos[0], 9, pos[1]);
+        pl.name = `upperLight_${i}`;
         scene.add(pl);
     });
 }
@@ -289,6 +425,11 @@ function toggleLights() {
 
     for (let i = 0; i < 4; i++) {
         const pl = scene.getObjectByName(`roomLight_${i}`);
+        if (pl) pl.intensity = 0.5 * intensityMult;
+    }
+
+    for (let i = 0; i < 2; i++) {
+        const pl = scene.getObjectByName(`upperLight_${i}`);
         if (pl) pl.intensity = 0.5 * intensityMult;
     }
 }
@@ -317,33 +458,43 @@ function createLightSwitch() {
 
 function createSkyTexture() {
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = 1024;
+    canvas.height = 1024;
     const ctx = canvas.getContext('2d');
 
-    // Gradient Sky
-    const grad = ctx.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, '#87CEEB'); // Sky Blue
-    grad.addColorStop(0.6, '#E0F7FA'); // Horizon
-    grad.addColorStop(0.6, '#228B22'); // Forest Green
-    grad.addColorStop(1, '#006400'); // Dark Green
+    // Beautiful spring/summer day sky - BRIGHT colors
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, 1024);
+    skyGrad.addColorStop(0, '#87ceeb');    // Sky blue at top
+    skyGrad.addColorStop(0.5, '#b0d8f0');  // Lighter sky blue
+    skyGrad.addColorStop(1, '#e0f0ff');    // Very light blue at horizon
 
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 512, 512);
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, 1024, 1024);
 
-    // Add some trees
-    ctx.fillStyle = '#004d00';
-    for (let i = 0; i < 100; i++) {
-        const x = Math.random() * 512;
-        const h = 20 + Math.random() * 40;
-        const y = 300 + Math.random() * 50; // Horizon line approx
+    // Add bright fluffy white clouds
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; // More opaque clouds
+    for (let i = 0; i < 20; i++) {
+        const x = Math.random() * 1024;
+        const y = Math.random() * 600; // Upper portion only
+        const size = 40 + Math.random() * 80;
 
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + 10, y);
-        ctx.lineTo(x + 5, y - h);
-        ctx.fill();
+        // Draw cloud as multiple overlapping circles
+        for (let j = 0; j < 5; j++) {
+            const offsetX = (Math.random() - 0.5) * size;
+            const offsetY = (Math.random() - 0.5) * size * 0.5;
+            const radius = size * (0.3 + Math.random() * 0.4);
+            ctx.beginPath();
+            ctx.arc(x + offsetX, y + offsetY, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
+
+    // Add subtle sun glow in upper corner
+    const sunGrad = ctx.createRadialGradient(850, 150, 0, 850, 150, 200);
+    sunGrad.addColorStop(0, 'rgba(255, 255, 200, 0.3)');
+    sunGrad.addColorStop(1, 'rgba(255, 255, 200, 0)');
+    ctx.fillStyle = sunGrad;
+    ctx.fillRect(0, 0, 1024, 1024);
 
     const tex = new THREE.CanvasTexture(canvas);
     return tex;
@@ -353,7 +504,9 @@ function createSkybox() {
     const geo = new THREE.CylinderGeometry(80, 80, 60, 32);
     const mat = new THREE.MeshBasicMaterial({
         map: createSkyTexture(),
-        side: THREE.BackSide
+        side: THREE.BackSide,
+        color: 0xffffff,  // Ensure full brightness
+        fog: false        // Don't apply fog to skybox
     });
     const sky = new THREE.Mesh(geo, mat);
     sky.position.y = 10;
@@ -361,41 +514,56 @@ function createSkybox() {
 }
 
 function buildGallery() {
+    // PHOTOREALISTIC TEXTURES - Maximum Quality
     const floorTex = state.textureLoader.load('assets/textures/floor_wood_neutral.png');
     floorTex.wrapS = THREE.RepeatWrapping;
     floorTex.wrapT = THREE.RepeatWrapping;
-    floorTex.repeat.set(8, 8);
+    floorTex.repeat.set(10, 10); // Balanced detail
     floorTex.encoding = THREE.sRGBEncoding;
+    floorTex.anisotropy = renderer.capabilities.getMaxAnisotropy(); // 16x filtering
+    floorTex.minFilter = THREE.LinearMipmapLinearFilter;
+    floorTex.magFilter = THREE.LinearFilter;
 
     const wallTex = state.textureLoader.load('assets/textures/wall_concrete.png');
     wallTex.wrapS = THREE.RepeatWrapping;
     wallTex.wrapT = THREE.RepeatWrapping;
-    wallTex.repeat.set(2, 1);
+    wallTex.repeat.set(1.5, 1); // Very subtle repetition
     wallTex.encoding = THREE.sRGBEncoding;
+    wallTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    wallTex.minFilter = THREE.LinearMipmapLinearFilter;
+    wallTex.magFilter = THREE.LinearFilter;
 
     const ceilingTex = state.textureLoader.load('assets/textures/ceiling_wood.png');
     ceilingTex.wrapS = THREE.RepeatWrapping;
     ceilingTex.wrapT = THREE.RepeatWrapping;
-    ceilingTex.repeat.set(4, 4);
+    ceilingTex.repeat.set(5, 5); // Subtle ceiling detail
     ceilingTex.encoding = THREE.sRGBEncoding;
+    ceilingTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    ceilingTex.minFilter = THREE.LinearMipmapLinearFilter;
+    ceilingTex.magFilter = THREE.LinearFilter;
 
+    // PREMIUM MATERIALS - Museum Quality
     const floorMat = new THREE.MeshStandardMaterial({
         map: floorTex,
-        roughness: 0.8,
-        metalness: 0.0,
-        envMapIntensity: 0.2
+        roughness: 0.25,      // Polished museum floor
+        metalness: 0.05,
+        color: 0xaaaaaa,      // Neutral tone
+        envMapIntensity: 0.6,
+        normalScale: new THREE.Vector2(0.5, 0.5)
     });
 
     const ceilingMat = new THREE.MeshStandardMaterial({
         map: ceilingTex,
-        roughness: 0.6,
-        color: 0xffffff
+        roughness: 0.85,
+        metalness: 0.0,
+        color: 0x555555       // Sophisticated dark ceiling
     });
 
     const wallMat = new THREE.MeshStandardMaterial({
         map: wallTex,
-        roughness: 0.8,
-        color: 0xffffff
+        roughness: 0.85,
+        metalness: 0.0,
+        color: 0x888888  // Lighter concrete gray
     });
 
     const lightMat = new THREE.MeshBasicMaterial({ color: 0xffffee });
@@ -415,6 +583,8 @@ function buildGallery() {
     function addCeilingLight(x, z) {
         const fixture = new THREE.Mesh(new THREE.BoxGeometry(2, 0.1, 0.5), lightMat);
         fixture.position.set(x, CONFIG.wallHeight - 0.05, z);
+        fixture.castShadow = false;      // No shadow casting
+        fixture.receiveShadow = false;   // No shadow receiving
         scene.add(fixture);
     }
 
@@ -854,35 +1024,49 @@ function buildGallery() {
 }
 
 function addObstacles() {
+    // PHOTOREALISTIC OBSTACLE TEXTURES
     const benchTex = state.textureLoader.load('assets/textures/bench_wood.png');
     benchTex.encoding = THREE.sRGBEncoding;
+    benchTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    benchTex.minFilter = THREE.LinearMipmapLinearFilter;
+    benchTex.magFilter = THREE.LinearFilter;
 
     const plantTex = state.textureLoader.load('assets/textures/plant_leaf.png');
     plantTex.encoding = THREE.sRGBEncoding;
     plantTex.wrapS = THREE.RepeatWrapping;
     plantTex.wrapT = THREE.RepeatWrapping;
+    plantTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    plantTex.minFilter = THREE.LinearMipmapLinearFilter;
+    plantTex.magFilter = THREE.LinearFilter;
 
     const potTex = state.textureLoader.load('assets/textures/pot_clay.png');
     potTex.encoding = THREE.sRGBEncoding;
+    potTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    potTex.minFilter = THREE.LinearMipmapLinearFilter;
+    potTex.magFilter = THREE.LinearFilter;
 
     const benchGeo = new THREE.BoxGeometry(4, 0.5, 1.5);
     const benchMat = new THREE.MeshStandardMaterial({
         map: benchTex,
-        roughness: 0.3,
-        metalness: 0.1
+        roughness: 0.35,  // Slightly worn wood
+        metalness: 0.0,
+        color: 0xcccccc
     });
 
     const leafGeo = new THREE.IcosahedronGeometry(0.4, 1);
     const plantMat = new THREE.MeshStandardMaterial({
         map: plantTex,
-        roughness: 0.8,
-        color: 0x66aa66
+        roughness: 0.8,   // Natural plant texture
+        metalness: 0.0,
+        color: 0x88aa88
     });
 
     const potGeo = new THREE.CylinderGeometry(0.4, 0.3, 0.5, 16);
     const potMat = new THREE.MeshStandardMaterial({
         map: potTex,
-        roughness: 0.9
+        roughness: 0.7,   // Clay texture
+        metalness: 0.0,
+        color: 0xaa8866
     });
 
     function addBench(x, z, rot) {
@@ -892,7 +1076,12 @@ function addObstacles() {
         bench.castShadow = true;
         bench.receiveShadow = true;
         scene.add(bench);
-        state.obstacles.push(new THREE.Box3().setFromObject(bench));
+
+        // Tighter collision box for easier navigation
+        const box = new THREE.Box3();
+        box.min.set(x - 1.25, 0, z - 0.4);  // Reduced from 1.5 to 1.25 width
+        box.max.set(x + 1.25, 0.5, z + 0.4); // Reduced from 0.5 to 0.4 depth
+        state.obstacles.push(box);
     }
 
     function addPlant(x, z) {
@@ -924,8 +1113,8 @@ function addObstacles() {
         scene.add(group);
 
         const box = new THREE.Box3();
-        box.min.set(x - 0.5, 0, z - 0.5);
-        box.max.set(x + 0.5, 2, z + 0.5);
+        box.min.set(x - 0.3, 0, z - 0.3);  // Reduced from 0.5 to 0.3
+        box.max.set(x + 0.3, 2, z + 0.3);
         state.obstacles.push(box);
     }
 
@@ -993,31 +1182,27 @@ function createCoverTexture(index, highRes = false, material = null) {
     const ctx = canvas.getContext('2d');
 
     const hue = (index * 137.5) % 360;
-    ctx.fillStyle = `hsl(${hue}, 40%, 20%)`;
+    // Elegant Dark Background
+    ctx.fillStyle = '#111111';
     ctx.fillRect(0, 0, width, height);
 
-    ctx.fillStyle = 'rgba(255,255,255,0.05)';
-    for (let i = 0; i < 100 * scale; i++) {
-        ctx.fillRect(
-            Math.random() * width,
-            Math.random() * height,
-            Math.random() * 50 * scale,
-            Math.random() * 50 * scale
-        );
-    }
-
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 20 * scale;
-    ctx.strokeRect(20 * scale, 20 * scale, width - 40 * scale, height - 40 * scale);
+    // Gold Accent
+    ctx.strokeStyle = '#C5A059'; // Gold
+    ctx.lineWidth = 10 * scale;
+    ctx.strokeRect(30 * scale, 30 * scale, width - 60 * scale, height - 60 * scale);
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${80 * scale}px serif`;
+    ctx.font = `bold ${80 * scale}px serif`; // Serif for elegance
     ctx.textAlign = 'center';
-    ctx.fillText('MAGAZINE', width / 2, 120 * scale);
-    ctx.font = `bold ${200 * scale}px sans-serif`;
+    ctx.fillText('WiWo', width / 2, 150 * scale);
+
+    ctx.fillStyle = '#C5A059'; // Gold
+    ctx.font = `bold ${200 * scale}px serif`;
     ctx.fillText(index + 1, width / 2, 400 * scale);
-    ctx.font = `${40 * scale}px sans-serif`;
-    ctx.fillText('Anniversary Issue', width / 2, 550 * scale);
+
+    ctx.fillStyle = '#aaaaaa';
+    ctx.font = `${30 * scale}px sans-serif`;
+    ctx.fillText('JUBILÄUMSAUSGABE', width / 2, 550 * scale);
 
     return new THREE.CanvasTexture(canvas);
 }
@@ -1121,7 +1306,24 @@ function placeCovers() {
 
 function checkCollision(newX, newZ, newY = 0) {
     const playerBox = new THREE.Box3();
-    const r = CONFIG.collisionRadius;
+
+    // Dynamic Radius: Use smaller radius on and around stairs
+    // Stairs area: x: 24-27, z: 5-15
+    // Extended zone to z=18 to prevent getting stuck at bottom
+    // Smooth transition zone from z=16-18
+    let r = CONFIG.collisionRadius;
+
+    if (newX > 23 && newX < 28) {
+        if (newZ > 2 && newZ < 16) {
+            // On stairs or top landing - use tight radius
+            r = CONFIG.stairRadius;
+        } else if (newZ >= 16 && newZ < 18) {
+            // Transition zone at bottom of stairs - gradually increase radius
+            const t = (newZ - 16) / 2; // 0 at z=16, 1 at z=18
+            r = CONFIG.stairRadius + (CONFIG.collisionRadius - CONFIG.stairRadius) * t;
+        }
+    }
+
     playerBox.min.set(newX - r, newY, newZ - r);
     playerBox.max.set(newX + r, newY + CONFIG.eyeHeight, newZ + r);
 
@@ -1203,11 +1405,214 @@ function closeVideo() {
 }
 
 function updateMovement() {
-    if (state.isOverlayOpen) return;
+    if (state.isOverlayOpen) {
+        // Check for any movement input to close overlay
+        if (state.keys.ArrowUp || state.keys.ArrowDown || state.keys.ArrowLeft || state.keys.ArrowRight ||
+            state.keys.KeyW || state.keys.KeyS || state.keys.KeyA || state.keys.KeyD ||
+            Math.abs(state.joystick.x) > 0.1 || Math.abs(state.joystick.y) > 0.1) {
+            closeOverlay();
+        }
+        return;
+    }
 
     let moveStep = 0;
     // Keyboard Movement
     if (state.keys.ArrowUp || state.keys.KeyW) moveStep = CONFIG.moveSpeed;
+    if (state.keys.ArrowDown || state.keys.KeyS) moveStep = -CONFIG.moveSpeed;
+
+    // Joystick Movement
+    if (state.joystick.y < -0.3) moveStep = CONFIG.moveSpeed;
+    if (state.joystick.y > 0.3) moveStep = -CONFIG.moveSpeed;
+
+    let rotChange = 0;
+    // Keyboard Rotation
+    if (state.keys.ArrowLeft || state.keys.KeyA) rotChange = CONFIG.rotSpeed;
+    if (state.keys.ArrowRight || state.keys.KeyD) rotChange = -CONFIG.rotSpeed;
+
+    // Joystick Rotation (Reduced Sensitivity)
+    // Using a lower multiplier for smoother mobile turning
+    if (state.joystick.x < -0.6) rotChange = CONFIG.rotSpeed * 0.4;
+    if (state.joystick.x > 0.6) rotChange = -CONFIG.rotSpeed * 0.4;
+
+    // If video is playing and user tries to move, close the video
+    if (state.isVideoPlaying && (moveStep !== 0 || rotChange !== 0)) {
+        closeVideo();
+        return; // Don't move this frame, just close video
+    }
+
+    // If video is playing, lock movement
+    if (state.isVideoPlaying) return;
+
+    player.rot += rotChange;
+
+    if (moveStep !== 0) {
+        const nextX = player.x - Math.sin(player.rot) * moveStep;
+        const nextZ = player.z - Math.cos(player.rot) * moveStep;
+
+        const targetY = getGroundHeight(nextX, nextZ);
+
+        if (!checkCollision(nextX, nextZ, targetY)) {
+            player.x = nextX;
+            player.z = nextZ;
+            player.y = targetY;
+        }
+    }
+
+    camera.position.x = player.x;
+    camera.position.z = player.z;
+    camera.position.y = player.y + CONFIG.eyeHeight;
+    camera.rotation.y = player.rot;
+
+    const frustum = new THREE.Frustum();
+    frustum.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+
+    state.covers.forEach(cover => {
+        if (cover.userData.viewed) return;
+        const worldPos = new THREE.Vector3();
+        cover.getWorldPosition(worldPos);
+        if (worldPos.distanceTo(camera.position) < 8 && frustum.containsPoint(worldPos)) {
+            // Raycast check to ensure line of sight
+            const raycaster = new THREE.Raycaster();
+            const dir = worldPos.clone().sub(camera.position).normalize();
+            raycaster.set(camera.position, dir);
+
+            // Intersect with walls and obstacles
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            // Check if the first intersection is the cover itself (or very close to it)
+            if (intersects.length > 0) {
+                const firstHit = intersects[0];
+                // Allow some tolerance or check if hit object is the cover
+                if (firstHit.object === cover || firstHit.distance >= worldPos.distanceTo(camera.position) - 0.5) {
+                    cover.userData.viewed = true;
+                    state.viewedCovers.add(cover.userData.id);
+                    cover.material.emissive.setHex(0x000000);
+                    const pct = Math.floor((state.viewedCovers.size / CONFIG.totalCovers) * 100);
+                    document.getElementById('completion-rate').innerText = `${pct}%`;
+                    document.getElementById('progress-fill').style.width = `${pct}%`;
+                }
+            }
+        }
+    });
+}
+
+function checkInteraction() {
+    if (state.isOverlayOpen) return;
+
+    let closest = null;
+    let minDist = CONFIG.interactionDist;
+
+    state.covers.forEach(cover => {
+        const worldPos = new THREE.Vector3();
+        cover.getWorldPosition(worldPos);
+        const dist = worldPos.distanceTo(camera.position);
+        if (dist < minDist) {
+            const dir = new THREE.Vector3();
+            camera.getWorldDirection(dir);
+            const toCover = worldPos.clone().sub(camera.position).normalize();
+            const dot = dir.dot(toCover);
+            if (dot > 0.8) {
+                closest = cover;
+                minDist = dist;
+            }
+        }
+    });
+
+    // Check interactables (Switch)
+    state.interactables.forEach(obj => {
+        const dist = obj.position.distanceTo(camera.position);
+        if (dist < minDist) {
+            const dir = new THREE.Vector3();
+            camera.getWorldDirection(dir);
+            const toObj = obj.position.clone().sub(camera.position).normalize();
+            const dot = dir.dot(toObj);
+            if (dot > 0.8) {
+                closest = obj;
+                minDist = dist;
+            }
+        }
+    });
+
+    if (closest) {
+        if (closest.userData.type === 'switch') {
+            toggleLights();
+        } else if (closest.userData.type === 'remote' || closest.userData.type === 'podcast') {
+            const videoId = closest.userData.videoId;
+
+            if (state.isVideoPlaying) {
+                // Stop video/podcast
+                closeVideo();
+            } else {
+                // Start video/podcast directly in fullscreen
+                const videoIframe = document.getElementById('video-screen');
+                videoIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1`;
+                videoIframe.style.display = 'block';
+
+                // Apply fullscreen styles immediately
+                videoIframe.style.position = 'fixed';
+                videoIframe.style.top = '50%';
+                videoIframe.style.left = '50%';
+                videoIframe.style.transform = 'translate(-50%, -50%)';
+                videoIframe.style.width = '90vw';
+                videoIframe.style.height = '90vh';
+                videoIframe.style.maxWidth = '1600px';
+                videoIframe.style.maxHeight = '900px';
+                videoIframe.style.zIndex = '10000';
+                videoIframe.style.border = '4px solid #e30613';
+                videoIframe.style.boxShadow = '0 0 50px rgba(227, 6, 19, 0.8)';
+                videoIframe.style.pointerEvents = 'auto';
+
+                state.isVideoPlaying = true;
+                state.isVideoPaused = false;
+
+                // Release pointer lock when video starts
+                document.exitPointerLock();
+            }
+        } else {
+            openOverlay(closest);
+        }
+    }
+}
+
+function updateInteractionPrompt() {
+    if (state.isOverlayOpen) {
+        document.getElementById('interaction-prompt').classList.add('hidden');
+        return;
+    }
+
+    let closest = null;
+    let minDist = CONFIG.interactionDist;
+
+    state.covers.forEach(cover => {
+        const worldPos = new THREE.Vector3();
+        cover.getWorldPosition(worldPos);
+        const dist = worldPos.distanceTo(camera.position);
+        if (dist < minDist) {
+            const dir = new THREE.Vector3();
+            camera.getWorldDirection(dir);
+            const toCover = worldPos.clone().sub(camera.position).normalize();
+            const dot = dir.dot(toCover);
+            if (dot > 0.8) {
+                closest = cover;
+                minDist = dist;
+            }
+        }
+    });
+
+    state.interactables.forEach(obj => {
+        const dist = obj.position.distanceTo(camera.position);
+        if (dist < minDist) {
+            const dir = new THREE.Vector3();
+            camera.getWorldDirection(dir);
+            const toObj = obj.position.clone().sub(camera.position).normalize();
+            const dot = dir.dot(toObj);
+            if (dot > 0.8) {
+                closest = obj;
+                minDist = dist;
+            }
+        }
+    });
+
     if (state.keys.ArrowDown || state.keys.KeyS) moveStep = -CONFIG.moveSpeed;
 
     // Joystick Movement
@@ -1428,7 +1833,11 @@ function animate() {
     requestAnimationFrame(animate);
     updateMovement();
     updateInteractionPrompt();
-    renderer.render(scene, camera);
+    if (composer) {
+        composer.render();
+    } else {
+        renderer.render(scene, camera);
+    }
     cssRenderer.render(cssScene, camera);
 }
 
@@ -1436,7 +1845,13 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    if (composer) composer.setSize(window.innerWidth, window.innerHeight);
     cssRenderer.setSize(window.innerWidth, window.innerHeight);
 }
+
+
+// Post-Processing Global
+let composer;
 
 init();
