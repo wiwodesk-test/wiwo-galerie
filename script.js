@@ -1,5 +1,9 @@
 // 3D Art Gallery - Fixed Navigation and Cover Placement
 
+// Detect iOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
 const CONFIG = {
     moveSpeed: 0.07, // Reduced from 0.10
     rotSpeed: 0.02,
@@ -181,8 +185,10 @@ function startExperience() {
     // Show subtle progress bar for remaining assets
     showAssetProgressBar();
 
-    // Request pointer lock
-    document.body.requestPointerLock();
+    // Request pointer lock (not supported on iOS)
+    if (!isIOS && document.body.requestPointerLock) {
+        document.body.requestPointerLock();
+    }
 }
 
 
@@ -1250,9 +1256,9 @@ function buildGallery() {
         state.interactables.push(group);
     }
 
-    // Create two podcast headphones
-    createHeadphones(-0.8, 6.15, 10, 'c7_WMRuzAvc', 'WirtschaftsWoche Podcast');
-    createHeadphones(0.8, 6.15, 10, 'c7_WMRuzAvc', 'WirtschaftsWoche Podcast');
+    // Create two podcast headphones on the table
+    createHeadphones(-0.8, 6.0, 10, 'c7_WMRuzAvc', 'WirtschaftsWoche Podcast');
+    createHeadphones(0.8, 6.0, 10, 'c7_WMRuzAvc', 'WirtschaftsWoche Podcast');
 
     // Table in Room 2 Upper (East) for Remote
     const table2 = new THREE.Mesh(tableGeo, tableMat);
@@ -1813,7 +1819,9 @@ function openOverlay(cover) {
     // console.log('openOverlay called for cover:', cover.userData.id, 'current state.isOverlayOpen:', state.isOverlayOpen);
     state.isOverlayOpen = true;
     state.currentCoverId = cover.userData.id;
-    document.exitPointerLock();
+    if (!isIOS && document.exitPointerLock) {
+        document.exitPointerLock();
+    }
 
     const coverIndex = cover.userData.id;
     const coverData = typeof COVERS_DATA !== 'undefined' && COVERS_DATA[coverIndex];
@@ -1899,7 +1907,9 @@ function closeOverlay() {
     overlay.style.visibility = '';
     overlay.style.pointerEvents = '';
 
-    document.body.requestPointerLock();
+    if (!isIOS && document.body.requestPointerLock) {
+        document.body.requestPointerLock();
+    }
     // console.log('closeOverlay complete, state.isOverlayOpen:', state.isOverlayOpen);
 }
 
@@ -2144,7 +2154,9 @@ function checkInteraction() {
                 state.isVideoPaused = false;
 
                 // Release pointer lock when video starts
-                document.exitPointerLock();
+                if (!isIOS && document.exitPointerLock) {
+                    document.exitPointerLock();
+                }
                 document.getElementById('video-close-btn').classList.remove('hidden');
             }
         } else {
