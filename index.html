@@ -17,7 +17,44 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 9999;
+            z-index: 10000;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: #C5A059;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(197, 160, 89, 0.3);
+            border-radius: 50%;
+            border-top-color: #C5A059;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto 20px;
+        }
+
+        .loading-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         body {
@@ -30,26 +67,38 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+
     <!-- Three.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
+
+    <!-- Post-Processing -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SimplexNoise.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 </head>
 
 <body>
     <!-- Loading Screen -->
     <div id="loading-screen">
         <div class="loading-content">
-            <img src="assets/logo.png" alt="WirtschaftsWoche 100" class="loading-logo">
-            <div class="loading-spinner"></div>
-            <div class="loading-text">Galerie wird geladen...</div>
+            <div class="logo">WiWo</div>
+            <div class="spinner"></div>
+            <div class="loading-text">Lade Galerie...</div>
         </div>
     </div>
 
     <!-- YouTube Video Screen -->
     <iframe id="video-screen" width="1280" height="720" src="" frameborder="0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen
-        style="display:none">
-    </iframe>
+        style="display:none"></iframe>
 
     <div id="ui-layer">
         <div id="info-panel">
@@ -57,6 +106,7 @@
             <p>Nutze die <strong>Pfeiltasten</strong> zum Bewegen.</p>
             <p>Drücke <strong>Enter</strong> für mehr Infos.</p>
         </div>
+
         <div id="stats-panel">
             <div class="stat-label">Betrachtete Titelseiten</div>
             <div class="stat-value" id="completion-rate">0%</div>
@@ -64,6 +114,7 @@
                 <div class="progress-fill" id="progress-fill"></div>
             </div>
         </div>
+
         <div id="cover-overlay" class="hidden">
             <div class="overlay-content">
                 <button id="close-btn">&times;</button>
@@ -74,7 +125,9 @@
                 </div>
             </div>
         </div>
+
         <div id="interaction-prompt" class="hidden">Ansehen</div>
+
         <div id="mobile-controls">
             <div id="joystick-zone" class="joystick-zone">
                 <div class="joystick-base">
@@ -83,7 +136,9 @@
             </div>
         </div>
     </div>
+
     <div id="canvas-container"></div>
+
     <script src="covers-data.js"></script>
     <script src="script.js"></script>
 </body>
