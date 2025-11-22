@@ -6,7 +6,7 @@ const CONFIG = {
     wallHeight: 5,
     wallThickness: 0.5,
     roomSize: 20,
-    collisionRadius: 1.0, // Standard "Personal Space" radius
+    collisionRadius: 1.3, // Standard "Personal Space" radius
     stairRadius: 0.3, // Very tight radius for smooth stair navigation
     eyeHeight: 1.7,
     totalCovers: 100,
@@ -34,7 +34,15 @@ const state = {
     isVideoPaused: false,
     css3DObject: null,
     joystick: { x: 0, y: 0 },
-    lazyTextureLoader: new THREE.TextureLoader() // Unmanaged loader
+    lazyTextureLoader: new THREE.TextureLoader(), // Unmanaged loader
+    // Progressive loading
+    assetLoadingProgress: 0,
+    totalAssets: 0,
+    loadedAssets: 0,
+    highResCache: new Map(), // Cache for high-res overlay images
+    lowResCache: new Map(), // Cache for low-res cover textures
+    materials: {}, // Cache for materials to update with textures later
+    experienceStarted: false // Flag to track if user has started the experience
 };
 
 // Setup loading manager callbacks (Optional now, but kept for debug)
@@ -43,25 +51,125 @@ state.loadingManager.onStart = function (url, itemsLoaded, itemsTotal) {
 };
 
 state.loadingManager.onLoad = function () {
-    // state.galleryReady = true; 
-    // hideLoadingScreen(); // We now hide manually to allow progressive loading
+    console.log('✅ All initial assets loaded');
+    const loadingText = document.querySelector('.loading-text');
+    if (loadingText) {
+        loadingText.innerText = 'Lade Galerie ... 100%';
+    }
+    setTimeout(() => {
+        state.galleryReady = true;
+        hideLoadingScreen();
+    }, 1000);
 };
 
 state.loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
     state.texturesLoaded = itemsLoaded;
     console.log('Loading: ' + itemsLoaded + '/' + itemsTotal);
+    const loadingText = document.querySelector('.loading-text');
+    if (loadingText) {
+        loadingText.innerText = `Lade Galerie ... ${Math.round((itemsLoaded / itemsTotal) * 100)}%`;
+    }
 };
 
 // Use loading manager for texture loader (Legacy/Blocking if needed)
 state.textureLoader = new THREE.TextureLoader(state.loadingManager);
 
+// Create and manage asset loading progress bar
+function createAssetProgressBar() {
+    const progressBar = document.createElement('div');
+    progressBar.id = 'asset-progress-bar';
+    progressBar.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.05);
+        z-index: 9998;
+        transition: opacity 0.3s ease;
+        opacity: 0;
+        pointer-events: none;
+    `;
+
+    const progressFill = document.createElement('div');
+    progressFill.id = 'asset-progress-fill';
+    progressFill.style.cssText = `
+        height: 100%;
+        background: linear-gradient(90deg, #C5A059 0%, #E5C079 100%);
+        width: 0%;
+        transition: width 0.3s ease;
+        box-shadow: 0 0 10px #C5A059;
+    `;
+
+    progressBar.appendChild(progressFill);
+    document.body.appendChild(progressBar);
+
+    return progressBar;
+}
+
+function showAssetProgressBar() {
+    let progressBar = document.getElementById('asset-progress-bar');
+    if (!progressBar) {
+        progressBar = createAssetProgressBar();
+    }
+    progressBar.style.opacity = '1';
+}
+
+function hideAssetProgressBar() {
+    const progressBar = document.getElementById('asset-progress-bar');
+    if (progressBar) {
+        setTimeout(() => {
+            progressBar.style.opacity = '0';
+        }, 500);
+    }
+}
+
+function updateAssetProgress(loaded, total) {
+    state.loadedAssets = loaded;
+    state.totalAssets = total;
+    const progress = total > 0 ? (loaded / total) * 100 : 0;
+
+    const progressFill = document.getElementById('asset-progress-fill');
+    if (progressFill) {
+        progressFill.style.width = `${progress}%`;
+    }
+
+    if (loaded >= total && total > 0) {
+        hideAssetProgressBar();
+    }
+}
+
 function hideLoadingScreen() {
+    // If experience has already started, do NOT show welcome screen again
+    if (state.experienceStarted) return;
+
     const loadingScreen = document.getElementById('loading-screen');
+    const welcomeScreen = document.getElementById('welcome-screen');
+
     if (loadingScreen) {
         loadingScreen.classList.add('hidden');
-        // Ensure gallery is marked ready
-        state.galleryReady = true;
     }
+
+    if (welcomeScreen) {
+        welcomeScreen.classList.remove('hidden');
+    }
+}
+
+function startExperience() {
+    state.experienceStarted = true;
+    const welcomeScreen = document.getElementById('welcome-screen');
+    if (welcomeScreen) {
+        welcomeScreen.classList.add('hidden');
+    }
+
+    // Ensure gallery is marked ready
+    state.galleryReady = true;
+
+    // Show subtle progress bar for remaining assets
+    showAssetProgressBar();
+
+    // Request pointer lock
+    document.body.requestPointerLock();
 }
 
 
@@ -91,6 +199,7 @@ function getGroundHeight(x, z) {
 }
 
 function init() {
+    console.log('🚀 Init started');
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87ceeb); // Sky blue background
     scene.fog = new THREE.Fog(0xb0d4f1, 10, 100); // Light blue fog for spring day
@@ -121,18 +230,43 @@ function init() {
     cssRenderer.domElement.style.pointerEvents = 'none';
     document.getElementById('canvas-container').appendChild(cssRenderer.domElement);
 
+    console.log('🏗️ Building gallery...');
+    try {
+        buildGallery();
+        console.log('✅ Gallery built. Scene children:', scene.children.length);
+    } catch (e) {
+        console.error('❌ Error building gallery:', e);
+    }
+
+    // Hide the initial loading screen immediately - REMOVED, handled by LoadingManager
+    // hideLoadingScreen();
+
+    console.log('💡 Setting up lighting...');
     setupLighting();
     createSkybox();
-    buildGallery();
     createLightSwitch();
+
+    console.log('🎨 Loading high-quality assets...');
+    loadHighQualityAssets();
 
     window.addEventListener('resize', onWindowResize, false);
 
     document.body.addEventListener('click', () => {
-        if (!state.isOverlayOpen) document.body.requestPointerLock();
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const isWelcomeVisible = welcomeScreen && !welcomeScreen.classList.contains('hidden');
+        if (!state.isOverlayOpen && !isWelcomeVisible) document.body.requestPointerLock();
     });
 
     document.addEventListener('keydown', (e) => {
+        // Start experience on any key press (except arrows) if welcome screen is visible
+        const welcomeScreen = document.getElementById('welcome-screen');
+        if (welcomeScreen && !welcomeScreen.classList.contains('hidden')) {
+            if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+                startExperience();
+            }
+            return;
+        }
+
         // Prevent default scrolling for arrow keys
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
             e.preventDefault();
@@ -155,6 +289,14 @@ function init() {
         e.stopPropagation();
         closeVideo();
     });
+
+    const startBtn = document.getElementById('start-btn');
+    if (startBtn) {
+        startBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startExperience();
+        });
+    }
 
     // Mobile Controls - Single Joystick for 4-directional movement
     const joystickStick = document.getElementById('joystick-stick');
@@ -345,16 +487,59 @@ function init() {
         console.warn('Post-processing not available:', error);
     }
 
+    console.log('🎬 Starting animation loop');
     animate();
 
-    // Hide loading screen immediately (Progressive Loading)
-    hideLoadingScreen();
+    // Start loading high-res images in background
+    setTimeout(() => {
+        preloadHighResImages();
+    }, 1000); // Wait 1 second after gallery loads
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    updateMovement();
+    updateInteractionPrompt();
+    if (composer) {
+        composer.render();
+    } else {
+        renderer.render(scene, camera);
+    }
+    cssRenderer.render(cssScene, camera);
+}
+
+// Preload high-res images in background with progress tracking
+function preloadHighResImages() {
+    if (typeof COVERS_DATA === 'undefined') return;
+
+    let loaded = 0;
+    const total = CONFIG.totalCovers;
+
+    for (let i = 0; i < CONFIG.totalCovers; i++) {
+        if (COVERS_DATA[i] && COVERS_DATA[i].highRes) {
+            const img = new Image();
+            img.onload = () => {
+                state.highResCache.set(i, COVERS_DATA[i].highRes);
+                loaded++;
+                updateAssetProgress(loaded, total);
+            };
+            img.onerror = () => {
+                // Count errors as loaded to keep progress moving
+                loaded++;
+                updateAssetProgress(loaded, total);
+            };
+            img.src = COVERS_DATA[i].highRes;
+        } else {
+            // No high-res for this cover, count as loaded
+            loaded++;
+            updateAssetProgress(loaded, total);
+        }
+    }
 }
 
 function onKeyDown(e) {
     // Video controls take priority
     if (state.isVideoPlaying) {
-        // Exit video with Escape, Enter, or any movement key
         if (['Escape', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyS', 'KeyA', 'KeyD'].includes(e.code)) {
             e.preventDefault();
             closeVideo();
@@ -538,61 +723,29 @@ function createSkybox() {
 }
 
 function buildGallery() {
-    // PHOTOREALISTIC TEXTURES - Maximum Quality
-    // Use lazy loader for environment to allow instant start
-    const floorTex = state.lazyTextureLoader.load('assets/textures/floor_wood_neutral.png');
-    floorTex.wrapS = THREE.RepeatWrapping;
-    floorTex.wrapT = THREE.RepeatWrapping;
-    floorTex.repeat.set(10, 10); // Balanced detail
-    floorTex.encoding = THREE.sRGBEncoding;
-    floorTex.anisotropy = renderer.capabilities.getMaxAnisotropy(); // 16x filtering
-    floorTex.minFilter = THREE.LinearMipmapLinearFilter;
-    floorTex.magFilter = THREE.LinearFilter;
-
-    const wallTex = state.lazyTextureLoader.load('assets/textures/wall_concrete.png');
-    wallTex.wrapS = THREE.RepeatWrapping;
-    wallTex.wrapT = THREE.RepeatWrapping;
-    wallTex.repeat.set(1.5, 1); // Very subtle repetition
-    wallTex.encoding = THREE.sRGBEncoding;
-    wallTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    wallTex.minFilter = THREE.LinearMipmapLinearFilter;
-    wallTex.magFilter = THREE.LinearFilter;
-
-    const ceilingTex = state.lazyTextureLoader.load('assets/textures/ceiling_wood.png');
-    ceilingTex.wrapS = THREE.RepeatWrapping;
-    ceilingTex.wrapT = THREE.RepeatWrapping;
-    ceilingTex.repeat.set(5, 5); // Subtle ceiling detail
-    ceilingTex.encoding = THREE.sRGBEncoding;
-    ceilingTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    ceilingTex.minFilter = THREE.LinearMipmapLinearFilter;
-    ceilingTex.magFilter = THREE.LinearFilter;
-
-    // PREMIUM MATERIALS - Museum Quality
+    // STRUCTURE FIRST - Placeholders
     const floorMat = new THREE.MeshStandardMaterial({
-        map: floorTex,
-        roughness: 0.25,      // Polished museum floor
-        metalness: 0.05,
-        color: 0xaaaaaa,      // Neutral tone
-        envMapIntensity: 0.6,
-        normalScale: new THREE.Vector2(0.5, 0.5)
+        color: 0xaaaaaa,
+        roughness: 0.25,
+        metalness: 0.05
     });
+    state.materials.floor = floorMat;
 
     const ceilingMat = new THREE.MeshStandardMaterial({
-        map: ceilingTex,
+        color: 0x555555,
         roughness: 0.85,
-        metalness: 0.0,
-        color: 0x555555       // Sophisticated dark ceiling
+        metalness: 0.0
     });
+    state.materials.ceiling = ceilingMat;
 
     const wallMat = new THREE.MeshStandardMaterial({
-        map: wallTex,
+        color: 0xe0e0e0,
         roughness: 0.85,
-        metalness: 0.0,
-        color: 0x888888  // Lighter concrete gray
+        metalness: 0.0
     });
+    state.materials.wall = wallMat;
 
     const lightMat = new THREE.MeshBasicMaterial({ color: 0xffffee });
-
     const wallGeo = new THREE.BoxGeometry(1, CONFIG.wallHeight, 1);
 
     function addWall(x, z, width, depth) {
@@ -758,7 +911,11 @@ function buildGallery() {
     const stepDepth = 10 / steps;
     const stepWidth = 3;
     const stepGeo = new THREE.BoxGeometry(stepWidth, stepHeight, stepDepth);
-    const stepMat = new THREE.MeshStandardMaterial({ map: floorTex });
+    const stepMat = new THREE.MeshStandardMaterial({
+        color: 0xaaaaaa,
+        roughness: 0.25
+    });
+    state.materials.steps = stepMat;
 
     for (let i = 0; i < steps; i++) {
         const s = new THREE.Mesh(stepGeo, stepMat);
@@ -1049,50 +1206,31 @@ function buildGallery() {
 }
 
 function addObstacles() {
-    // PHOTOREALISTIC OBSTACLE TEXTURES
-    const benchTex = state.textureLoader.load('assets/textures/bench_wood.png');
-    benchTex.encoding = THREE.sRGBEncoding;
-    benchTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    benchTex.minFilter = THREE.LinearMipmapLinearFilter;
-    benchTex.magFilter = THREE.LinearFilter;
+    // PLACEHOLDER MATERIALS
+    const benchMat = new THREE.MeshStandardMaterial({
+        color: 0xcccccc,
+        roughness: 0.35,
+        metalness: 0.0
+    });
+    state.materials.bench = benchMat;
 
-    const plantTex = state.textureLoader.load('assets/textures/plant_leaf.png');
-    plantTex.encoding = THREE.sRGBEncoding;
-    plantTex.wrapS = THREE.RepeatWrapping;
-    plantTex.wrapT = THREE.RepeatWrapping;
-    plantTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    plantTex.minFilter = THREE.LinearMipmapLinearFilter;
-    plantTex.magFilter = THREE.LinearFilter;
+    const plantMat = new THREE.MeshStandardMaterial({
+        color: 0x88aa88,
+        roughness: 0.8,
+        metalness: 0.0
+    });
+    state.materials.plant = plantMat;
 
-    const potTex = state.textureLoader.load('assets/textures/pot_clay.png');
-    potTex.encoding = THREE.sRGBEncoding;
-    potTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    potTex.minFilter = THREE.LinearMipmapLinearFilter;
-    potTex.magFilter = THREE.LinearFilter;
+    const potMat = new THREE.MeshStandardMaterial({
+        color: 0x885522, // Clay color
+        roughness: 0.8
+    });
+    state.materials.pot = potMat;
 
     const benchGeo = new THREE.BoxGeometry(4, 0.5, 1.5);
-    const benchMat = new THREE.MeshStandardMaterial({
-        map: benchTex,
-        roughness: 0.35,  // Slightly worn wood
-        metalness: 0.0,
-        color: 0xcccccc
-    });
-
     const leafGeo = new THREE.IcosahedronGeometry(0.4, 1);
-    const plantMat = new THREE.MeshStandardMaterial({
-        map: plantTex,
-        roughness: 0.8,   // Natural plant texture
-        metalness: 0.0,
-        color: 0x88aa88
-    });
-
     const potGeo = new THREE.CylinderGeometry(0.4, 0.3, 0.5, 16);
-    const potMat = new THREE.MeshStandardMaterial({
-        map: potTex,
-        roughness: 0.7,   // Clay texture
-        metalness: 0.0,
-        color: 0xaa8866
-    });
+
 
     function addBench(x, z, rot) {
         const bench = new THREE.Mesh(benchGeo, benchMat);
@@ -1151,6 +1289,41 @@ function addObstacles() {
     addPlant(23, 35);
     addBench(0, 30, Math.PI / 2);
     addPlant(-3, 35);
+}
+
+function loadHighQualityAssets() {
+    // Use MANAGED loader for environment so loading screen waits for them
+    const loader = state.textureLoader;
+
+    const loadAndApply = (url, materialKey, repeatX = 1, repeatY = 1) => {
+        loader.load(url, (tex) => {
+            tex.encoding = THREE.sRGBEncoding;
+            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            tex.minFilter = THREE.LinearMipmapLinearFilter;
+            tex.magFilter = THREE.LinearFilter;
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            if (repeatX !== 1 || repeatY !== 1) {
+                tex.repeat.set(repeatX, repeatY);
+            }
+
+            if (state.materials[materialKey]) {
+                state.materials[materialKey].map = tex;
+                state.materials[materialKey].needsUpdate = true;
+            }
+        });
+    };
+
+    // Environment Textures
+    loadAndApply('assets/textures/floor_wood_neutral.png', 'floor', 10, 10);
+    loadAndApply('assets/textures/floor_wood_neutral.png', 'steps', 2, 10); // Apply to steps too
+    loadAndApply('assets/textures/wall_concrete.png', 'wall', 1.5, 1);
+    loadAndApply('assets/textures/ceiling_wood.png', 'ceiling', 5, 5);
+
+    // Obstacle Textures
+    loadAndApply('assets/textures/bench_wood.png', 'bench');
+    loadAndApply('assets/textures/plant_leaf.png', 'plant');
+    loadAndApply('assets/textures/pot_clay.png', 'pot');
 }
 
 function createFrame(width, height) {
@@ -1278,6 +1451,7 @@ function placeCovers() {
             frame.position.z = 0;
             group.add(frame);
 
+            // Create material for the cover
             const mat = new THREE.MeshStandardMaterial({
                 roughness: 0.4,
                 color: 0xffffff,
@@ -1285,7 +1459,25 @@ function placeCovers() {
                 transparent: true,
                 opacity: 1.0
             });
-            mat.map = createCoverTexture(coverIndex, false, mat);
+
+            // Load low‑res image if available, using cache
+            if (COVERS_DATA && COVERS_DATA[coverIndex] && COVERS_DATA[coverIndex].lowRes) {
+                // console.log(`Queuing load for cover ${coverIndex}: ${COVERS_DATA[coverIndex].lowRes}`);
+                let tex;
+                if (state.lowResCache.has(coverIndex)) {
+                    tex = state.lowResCache.get(coverIndex);
+                } else {
+                    tex = state.textureLoader.load(COVERS_DATA[coverIndex].lowRes);
+                    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                    state.lowResCache.set(coverIndex, tex);
+                }
+                mat.map = tex;
+            } else {
+                // console.log(`No low-res image for cover ${coverIndex}, using procedural`);
+                // Fallback to procedural low‑res texture
+                mat.map = createCoverTexture(coverIndex, false, mat);
+            }
+            mat.needsUpdate = true;
             const mesh = new THREE.Mesh(coverGeo, mat);
             mesh.userData = { id: coverIndex, viewed: false };
             mesh.position.z = 0.11;
@@ -1393,15 +1585,44 @@ function openOverlay(cover) {
     const container = document.getElementById('overlay-image-container');
     container.innerHTML = '';
 
-    // Generate high-res image for overlay
+    // Generate image for overlay with progressive loading
     const img = document.createElement('img');
 
     if (coverData) {
-        img.src = coverData.highRes;
+        // Progressive loading: Show low-res first, then upgrade to high-res
+        if (coverData.lowRes) {
+            // Show low-res immediately
+            img.src = coverData.lowRes;
+            img.style.filter = 'blur(2px)'; // Slight blur on low-res
+        }
+
+        // Load high-res in background
+        if (coverData.highRes) {
+            if (state.highResCache.has(coverIndex)) {
+                // Use cached high-res immediately
+                img.src = state.highResCache.get(coverIndex);
+                img.style.filter = 'none';
+            } else {
+                // Load high-res asynchronously
+                const highResImg = new Image();
+                highResImg.onload = () => {
+                    state.highResCache.set(coverIndex, coverData.highRes);
+                    // Only update if this overlay is still open for this cover
+                    if (state.isOverlayOpen && state.currentCoverId === coverIndex) {
+                        img.src = coverData.highRes;
+                        img.style.filter = 'none'; // Remove blur when high-res loads
+                    }
+                };
+                highResImg.src = coverData.highRes;
+            }
+        } else {
+            // No high-res available, remove blur from low-res
+            img.style.filter = 'none';
+        }
     } else {
-        // Fallback to procedural texture
-        const highResTex = createCoverTexture(coverIndex, true);
-        img.src = highResTex.image.src || highResTex.image.toDataURL();
+        // Fallback to procedural texture (low-res)
+        const lowResTex = createCoverTexture(coverIndex, false);
+        img.src = lowResTex.image.src || lowResTex.image.toDataURL();
     }
 
     img.style.width = '100%';
@@ -1602,6 +1823,7 @@ function updateMovement() {
                 // Close if player moves too far away OR looks away significantly
                 if (dist > 2.5 || dot < 0.5) {
                     // console.log('Auto-closing overlay - dist:', dist.toFixed(2), 'dot:', dot.toFixed(2));
+
                     closeOverlay();
                 }
             }
@@ -1631,7 +1853,6 @@ function checkInteraction() {
         }
     });
 
-    // Check interactables (Switch)
     state.interactables.forEach(obj => {
         const dist = obj.position.distanceTo(camera.position);
         if (dist < minDist) {
@@ -1748,16 +1969,36 @@ function updateInteractionPrompt() {
     }
 }
 
+let hasLoggedError = false;
+let frameCount = 0;
 function animate() {
     requestAnimationFrame(animate);
-    updateMovement();
-    updateInteractionPrompt();
-    if (composer) {
-        composer.render();
-    } else {
-        renderer.render(scene, camera);
+    try {
+        if (!scene || !camera || !renderer) return;
+
+        updateMovement();
+        updateInteractionPrompt();
+
+        if (composer) {
+            composer.render();
+        } else {
+            renderer.render(scene, camera);
+        }
+
+        if (cssRenderer) {
+            cssRenderer.render(cssScene, camera);
+        }
+
+        frameCount++;
+        if (frameCount % 60 === 0) {
+            // console.log(`Frame ${frameCount}: Camera at (${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)}), Scene children: ${scene.children.length}`);
+        }
+    } catch (e) {
+        if (!hasLoggedError) {
+            console.error('❌ Error in animation loop:', e);
+            hasLoggedError = true;
+        }
     }
-    cssRenderer.render(cssScene, camera);
 }
 
 function onWindowResize() {
