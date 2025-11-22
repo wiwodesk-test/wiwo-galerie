@@ -6,7 +6,7 @@ const CONFIG = {
     wallHeight: 5,
     wallThickness: 0.5,
     roomSize: 20,
-    collisionRadius: 1.3, // Standard "Personal Space" radius
+    collisionRadius: 1.0, // Standard "Personal Space" radius
     stairRadius: 0.3, // Very tight radius for smooth stair navigation
     eyeHeight: 1.7,
     totalCovers: 100,
@@ -23,6 +23,8 @@ const state = {
     covers: [],
     interactables: [],
     isOverlayOpen: false,
+    currentCoverId: null,
+    lastClosedCoverId: null,
     textureLoader: new THREE.TextureLoader(),
     loadingManager: new THREE.LoadingManager(),
     texturesLoaded: 0,
@@ -31,17 +33,18 @@ const state = {
     isVideoPlaying: false,
     isVideoPaused: false,
     css3DObject: null,
-    joystick: { x: 0, y: 0 }
+    joystick: { x: 0, y: 0 },
+    lazyTextureLoader: new THREE.TextureLoader() // Unmanaged loader
 };
 
-// Setup loading manager callbacks
+// Setup loading manager callbacks (Optional now, but kept for debug)
 state.loadingManager.onStart = function (url, itemsLoaded, itemsTotal) {
     state.totalTextures = itemsTotal;
 };
 
 state.loadingManager.onLoad = function () {
-    state.galleryReady = true;
-    hideLoadingScreen();
+    // state.galleryReady = true; 
+    // hideLoadingScreen(); // We now hide manually to allow progressive loading
 };
 
 state.loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
@@ -49,13 +52,15 @@ state.loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
     console.log('Loading: ' + itemsLoaded + '/' + itemsTotal);
 };
 
-// Use loading manager for texture loader
+// Use loading manager for texture loader (Legacy/Blocking if needed)
 state.textureLoader = new THREE.TextureLoader(state.loadingManager);
 
 function hideLoadingScreen() {
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen) {
         loadingScreen.classList.add('hidden');
+        // Ensure gallery is marked ready
+        state.galleryReady = true;
     }
 }
 
@@ -140,6 +145,15 @@ function init() {
     document.getElementById('close-btn').addEventListener('click', (e) => {
         e.stopPropagation(); // Prevent click from propagating to body
         closeOverlay();
+    });
+    document.getElementById('video-close-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeVideo();
+    });
+    document.getElementById('video-close-btn').addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Prevent ghost clicks
+        e.stopPropagation();
+        closeVideo();
     });
 
     // Mobile Controls - Single Joystick for 4-directional movement
@@ -332,6 +346,9 @@ function init() {
     }
 
     animate();
+
+    // Hide loading screen immediately (Progressive Loading)
+    hideLoadingScreen();
 }
 
 function onKeyDown(e) {
@@ -364,6 +381,13 @@ function onKeyDown(e) {
     }
 
     if (state.keys.hasOwnProperty(e.code)) state.keys[e.code] = true;
+
+    // Close overlay with Escape
+    if (e.code === 'Escape' && state.isOverlayOpen) {
+        e.preventDefault();
+        closeOverlay();
+        return;
+    }
 
     if (e.code === 'Enter') {
         checkInteraction();
@@ -515,7 +539,8 @@ function createSkybox() {
 
 function buildGallery() {
     // PHOTOREALISTIC TEXTURES - Maximum Quality
-    const floorTex = state.textureLoader.load('assets/textures/floor_wood_neutral.png');
+    // Use lazy loader for environment to allow instant start
+    const floorTex = state.lazyTextureLoader.load('assets/textures/floor_wood_neutral.png');
     floorTex.wrapS = THREE.RepeatWrapping;
     floorTex.wrapT = THREE.RepeatWrapping;
     floorTex.repeat.set(10, 10); // Balanced detail
@@ -524,7 +549,7 @@ function buildGallery() {
     floorTex.minFilter = THREE.LinearMipmapLinearFilter;
     floorTex.magFilter = THREE.LinearFilter;
 
-    const wallTex = state.textureLoader.load('assets/textures/wall_concrete.png');
+    const wallTex = state.lazyTextureLoader.load('assets/textures/wall_concrete.png');
     wallTex.wrapS = THREE.RepeatWrapping;
     wallTex.wrapT = THREE.RepeatWrapping;
     wallTex.repeat.set(1.5, 1); // Very subtle repetition
@@ -533,7 +558,7 @@ function buildGallery() {
     wallTex.minFilter = THREE.LinearMipmapLinearFilter;
     wallTex.magFilter = THREE.LinearFilter;
 
-    const ceilingTex = state.textureLoader.load('assets/textures/ceiling_wood.png');
+    const ceilingTex = state.lazyTextureLoader.load('assets/textures/ceiling_wood.png');
     ceilingTex.wrapS = THREE.RepeatWrapping;
     ceilingTex.wrapT = THREE.RepeatWrapping;
     ceilingTex.repeat.set(5, 5); // Subtle ceiling detail
@@ -1152,26 +1177,7 @@ function createFrame(width, height) {
 }
 
 function createCoverTexture(index, highRes = false, material = null) {
-    // Check if custom cover data exists
-    const coverData = typeof COVERS_DATA !== 'undefined' && COVERS_DATA[index];
-
-    if (coverData) {
-        // Load custom image
-        const imagePath = highRes ? coverData.highRes : coverData.lowRes;
-        const tex = state.textureLoader.load(imagePath, (t) => {
-            t.encoding = THREE.sRGBEncoding;
-            t.flipY = true;
-            if (material) {
-                material.map = t;
-                material.needsUpdate = true;
-            }
-        });
-        tex.encoding = THREE.sRGBEncoding;
-        tex.flipY = true;
-        return tex;
-    }
-
-    // Fallback: Generate procedural texture
+    // Fallback/Initial: Generate procedural texture
     const width = highRes ? 1024 : 512;
     const height = highRes ? 1360 : 680;
     const scale = highRes ? 2 : 1;
@@ -1204,7 +1210,41 @@ function createCoverTexture(index, highRes = false, material = null) {
     ctx.font = `${30 * scale}px sans-serif`;
     ctx.fillText('JUBILÄUMSAUSGABE', width / 2, 550 * scale);
 
-    return new THREE.CanvasTexture(canvas);
+    const canvasTex = new THREE.CanvasTexture(canvas);
+    canvasTex.encoding = THREE.sRGBEncoding;
+
+    // Check if custom cover data exists and lazy load it
+    const coverData = typeof COVERS_DATA !== 'undefined' && COVERS_DATA[index];
+
+    if (coverData) {
+        // Load custom image asynchronously
+        const imagePath = highRes ? coverData.highRes : coverData.lowRes;
+
+        // Use lazy loader so we don't block the gallery start
+        state.lazyTextureLoader.load(imagePath, (t) => {
+            t.encoding = THREE.sRGBEncoding;
+            t.flipY = true;
+
+            // If a material was passed, update it directly
+            if (material) {
+                material.map = t;
+                material.needsUpdate = true;
+            } else {
+                // If no material passed (e.g. for overlay), we might need to handle it differently
+                // But typically overlay uses the img tag or updates the mesh
+                // For the overlay function, it usually creates a new texture.
+                // If we returned the canvasTex, we can't easily swap it unless we copy the image to the canvas
+                // OR if the caller uses the texture in a material, we need that material reference.
+
+                // However, for the wall covers, 'material' is passed.
+                // For the overlay, 'openOverlay' calls this with highRes=true.
+                // openOverlay uses an <img> tag for highRes usually, or a canvas.
+                // Let's check openOverlay.
+            }
+        });
+    }
+
+    return canvasTex;
 }
 
 function placeCovers() {
@@ -1241,7 +1281,9 @@ function placeCovers() {
             const mat = new THREE.MeshStandardMaterial({
                 roughness: 0.4,
                 color: 0xffffff,
-                emissive: 0x111111 // Start darker
+                emissive: 0x000000,
+                transparent: true,
+                opacity: 1.0
             });
             mat.map = createCoverTexture(coverIndex, false, mat);
             const mesh = new THREE.Mesh(coverGeo, mat);
@@ -1333,7 +1375,9 @@ function checkCollision(newX, newZ, newY = 0) {
 }
 
 function openOverlay(cover) {
+    // console.log('openOverlay called for cover:', cover.userData.id, 'current state.isOverlayOpen:', state.isOverlayOpen);
     state.isOverlayOpen = true;
+    state.currentCoverId = cover.userData.id;
     document.exitPointerLock();
 
     const coverIndex = cover.userData.id;
@@ -1364,13 +1408,35 @@ function openOverlay(cover) {
     img.style.height = 'auto';
     container.appendChild(img);
 
-    document.getElementById('cover-overlay').classList.remove('hidden');
+    const overlay = document.getElementById('cover-overlay');
+    overlay.classList.remove('hidden');
+    // Force visibility
+    overlay.style.opacity = '1';
+    overlay.style.visibility = 'visible';
+    overlay.style.pointerEvents = 'auto';
+    // console.log('openOverlay complete, state.isOverlayOpen:', state.isOverlayOpen, 'overlay styles:', {
+    //     display: window.getComputedStyle(overlay).display,
+    //     opacity: window.getComputedStyle(overlay).opacity,
+    //     visibility: window.getComputedStyle(overlay).visibility,
+    //     zIndex: window.getComputedStyle(overlay).zIndex
+    // });
 }
 
 function closeOverlay() {
+    // console.log('closeOverlay called, current state.isOverlayOpen:', state.isOverlayOpen);
     state.isOverlayOpen = false;
-    document.getElementById('cover-overlay').classList.add('hidden');
+    state.lastClosedCoverId = state.currentCoverId;
+    state.currentCoverId = null;
+
+    const overlay = document.getElementById('cover-overlay');
+    overlay.classList.add('hidden');
+    // Reset inline styles to allow CSS to take over
+    overlay.style.opacity = '';
+    overlay.style.visibility = '';
+    overlay.style.pointerEvents = '';
+
     document.body.requestPointerLock();
+    // console.log('closeOverlay complete, state.isOverlayOpen:', state.isOverlayOpen);
 }
 
 function closeVideo() {
@@ -1401,19 +1467,12 @@ function closeVideo() {
         // Reset state
         state.isVideoPlaying = false;
         state.isVideoPaused = false;
+        document.getElementById('video-close-btn').classList.add('hidden');
     }
 }
 
 function updateMovement() {
-    if (state.isOverlayOpen) {
-        // Check for any movement input to close overlay
-        if (state.keys.ArrowUp || state.keys.ArrowDown || state.keys.ArrowLeft || state.keys.ArrowRight ||
-            state.keys.KeyW || state.keys.KeyS || state.keys.KeyA || state.keys.KeyD ||
-            Math.abs(state.joystick.x) > 0.1 || Math.abs(state.joystick.y) > 0.1) {
-            closeOverlay();
-        }
-        return;
-    }
+    // Movement is allowed even when overlay is open (so auto-close can detect movement away)
 
     let moveStep = 0;
     // Keyboard Movement
@@ -1466,229 +1525,88 @@ function updateMovement() {
     const frustum = new THREE.Frustum();
     frustum.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
 
-    state.covers.forEach(cover => {
-        if (cover.userData.viewed) return;
-        const worldPos = new THREE.Vector3();
-        cover.getWorldPosition(worldPos);
-        if (worldPos.distanceTo(camera.position) < 8 && frustum.containsPoint(worldPos)) {
-            // Raycast check to ensure line of sight
-            const raycaster = new THREE.Raycaster();
-            const dir = worldPos.clone().sub(camera.position).normalize();
-            raycaster.set(camera.position, dir);
+    // Auto-view logic - open when very close, close when moving away
+    if (performance.now() > 2000) {
+        // console.log('Auto-view check running, covers count:', state.covers.length, 'isOverlayOpen:', state.isOverlayOpen);
+        let closest = null;
+        let minDist = 1.5; // Increased slightly for better UX
 
-            // Intersect with walls and obstacles
-            const intersects = raycaster.intersectObjects(scene.children, true);
+        state.covers.forEach(cover => {
+            const worldPos = new THREE.Vector3();
+            cover.getWorldPosition(worldPos);
+            const dist = worldPos.distanceTo(camera.position);
 
-            // Check if the first intersection is the cover itself (or very close to it)
-            if (intersects.length > 0) {
-                const firstHit = intersects[0];
-                // Allow some tolerance or check if hit object is the cover
-                if (firstHit.object === cover || firstHit.distance >= worldPos.distanceTo(camera.position) - 0.5) {
-                    cover.userData.viewed = true;
-                    state.viewedCovers.add(cover.userData.id);
-                    cover.material.emissive.setHex(0x000000);
-                    const pct = Math.floor((state.viewedCovers.size / CONFIG.totalCovers) * 100);
-                    document.getElementById('completion-rate').innerText = `${pct}%`;
-                    document.getElementById('progress-fill').style.width = `${pct}%`;
+            // Reset debounce when player moves far enough away
+            if (state.lastClosedCoverId === cover.userData.id && dist > 2.5) {
+                state.lastClosedCoverId = null;
+            }
+
+            // Find closest cover for auto-open (only if overlay is not already open)
+            if (!state.isOverlayOpen && dist < minDist && state.lastClosedCoverId !== cover.userData.id) {
+                const dir = new THREE.Vector3();
+                camera.getWorldDirection(dir);
+                const toCover = worldPos.clone().sub(camera.position).normalize();
+                const dot = dir.dot(toCover);
+
+                // console.log(`Cover ${cover.userData.id}: dist=${dist.toFixed(2)}m, dot=${dot.toFixed(3)}, threshold=0.85, lastClosed=${state.lastClosedCoverId}`);
+
+                // Require looking directly at the cover
+                if (dot > 0.85) {
+                    closest = cover;
+                    minDist = dist;
+                    // console.log(`  → This is the closest qualifying cover!`);
                 }
             }
-        }
-    });
-}
 
-function checkInteraction() {
-    if (state.isOverlayOpen) return;
-
-    let closest = null;
-    let minDist = CONFIG.interactionDist;
-
-    state.covers.forEach(cover => {
-        const worldPos = new THREE.Vector3();
-        cover.getWorldPosition(worldPos);
-        const dist = worldPos.distanceTo(camera.position);
-        if (dist < minDist) {
-            const dir = new THREE.Vector3();
-            camera.getWorldDirection(dir);
-            const toCover = worldPos.clone().sub(camera.position).normalize();
-            const dot = dir.dot(toCover);
-            if (dot > 0.8) {
-                closest = cover;
-                minDist = dist;
+            // Mark as viewed if seen (separate from auto-open)
+            if (!cover.userData.viewed && dist < 8 && frustum.containsPoint(worldPos)) {
+                const raycaster = new THREE.Raycaster();
+                const dir = worldPos.clone().sub(camera.position).normalize();
+                raycaster.set(camera.position, dir);
+                const intersects = raycaster.intersectObjects(scene.children, true);
+                if (intersects.length > 0) {
+                    const firstHit = intersects[0];
+                    if (firstHit.object === cover || firstHit.distance >= dist - 0.5) {
+                        cover.userData.viewed = true;
+                        state.viewedCovers.add(cover.userData.id);
+                        cover.material.emissive.setHex(0x050505); // Subtle glow
+                        const pct = Math.floor((state.viewedCovers.size / CONFIG.totalCovers) * 100);
+                        document.getElementById('completion-rate').innerText = `${pct}%`;
+                        document.getElementById('progress-fill').style.width = `${pct}%`;
+                    }
+                }
             }
-        }
-    });
+        });
 
-    // Check interactables (Switch)
-    state.interactables.forEach(obj => {
-        const dist = obj.position.distanceTo(camera.position);
-        if (dist < minDist) {
-            const dir = new THREE.Vector3();
-            camera.getWorldDirection(dir);
-            const toObj = obj.position.clone().sub(camera.position).normalize();
-            const dot = dir.dot(toObj);
-            if (dot > 0.8) {
-                closest = obj;
-                minDist = dist;
-            }
-        }
-    });
-
-    if (closest) {
-        if (closest.userData.type === 'switch') {
-            toggleLights();
-        } else if (closest.userData.type === 'remote' || closest.userData.type === 'podcast') {
-            const videoId = closest.userData.videoId;
-
-            if (state.isVideoPlaying) {
-                // Stop video/podcast
-                closeVideo();
-            } else {
-                // Start video/podcast directly in fullscreen
-                const videoIframe = document.getElementById('video-screen');
-                videoIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1`;
-                videoIframe.style.display = 'block';
-
-                // Apply fullscreen styles immediately
-                videoIframe.style.position = 'fixed';
-                videoIframe.style.top = '50%';
-                videoIframe.style.left = '50%';
-                videoIframe.style.transform = 'translate(-50%, -50%)';
-                videoIframe.style.width = '90vw';
-                videoIframe.style.height = '90vh';
-                videoIframe.style.maxWidth = '1600px';
-                videoIframe.style.maxHeight = '900px';
-                videoIframe.style.zIndex = '10000';
-                videoIframe.style.border = '4px solid #e30613';
-                videoIframe.style.boxShadow = '0 0 50px rgba(227, 6, 19, 0.8)';
-                videoIframe.style.pointerEvents = 'auto';
-
-                state.isVideoPlaying = true;
-                state.isVideoPaused = false;
-
-                // Release pointer lock when video starts
-                document.exitPointerLock();
-            }
-        } else {
+        // Auto-open overlay when very close to a cover
+        if (closest && !state.isOverlayOpen) {
+            // console.log('Auto-opening overlay for cover:', closest.userData.id);
             openOverlay(closest);
         }
-    }
-}
 
-function updateInteractionPrompt() {
-    if (state.isOverlayOpen) {
-        document.getElementById('interaction-prompt').classList.add('hidden');
-        return;
-    }
+        // Auto-close overlay when player moves away or looks away from the current cover
+        if (state.isOverlayOpen && state.currentCoverId !== null) {
+            const currentCover = state.covers.find(c => c.userData.id === state.currentCoverId);
+            if (currentCover) {
+                const worldPos = new THREE.Vector3();
+                currentCover.getWorldPosition(worldPos);
+                const dist = worldPos.distanceTo(camera.position);
 
-    let closest = null;
-    let minDist = CONFIG.interactionDist;
+                const dir = new THREE.Vector3();
+                camera.getWorldDirection(dir);
+                const toCover = worldPos.clone().sub(camera.position).normalize();
+                const dot = dir.dot(toCover);
 
-    state.covers.forEach(cover => {
-        const worldPos = new THREE.Vector3();
-        cover.getWorldPosition(worldPos);
-        const dist = worldPos.distanceTo(camera.position);
-        if (dist < minDist) {
-            const dir = new THREE.Vector3();
-            camera.getWorldDirection(dir);
-            const toCover = worldPos.clone().sub(camera.position).normalize();
-            const dot = dir.dot(toCover);
-            if (dot > 0.8) {
-                closest = cover;
-                minDist = dist;
-            }
-        }
-    });
+                // console.log(`Auto-close check: cover=${state.currentCoverId}, dist=${dist.toFixed(2)}, dot=${dot.toFixed(2)}, thresholds: dist>2.5 OR dot<0.5`);
 
-    state.interactables.forEach(obj => {
-        const dist = obj.position.distanceTo(camera.position);
-        if (dist < minDist) {
-            const dir = new THREE.Vector3();
-            camera.getWorldDirection(dir);
-            const toObj = obj.position.clone().sub(camera.position).normalize();
-            const dot = dir.dot(toObj);
-            if (dot > 0.8) {
-                closest = obj;
-                minDist = dist;
-            }
-        }
-    });
-
-    if (state.keys.ArrowDown || state.keys.KeyS) moveStep = -CONFIG.moveSpeed;
-
-    // Joystick Movement
-    if (state.joystick.y < -0.3) moveStep = CONFIG.moveSpeed;
-    if (state.joystick.y > 0.3) moveStep = -CONFIG.moveSpeed;
-
-    let rotChange = 0;
-    // Keyboard Rotation
-    if (state.keys.ArrowLeft || state.keys.KeyA) rotChange = CONFIG.rotSpeed;
-    if (state.keys.ArrowRight || state.keys.KeyD) rotChange = -CONFIG.rotSpeed;
-
-    // Joystick Rotation (Reduced Sensitivity)
-    // Using a lower multiplier for smoother mobile turning
-    if (state.joystick.x < -0.6) rotChange = CONFIG.rotSpeed * 0.4;
-    if (state.joystick.x > 0.6) rotChange = -CONFIG.rotSpeed * 0.4;
-
-    // If video is playing and user tries to move, close the video
-    if (state.isVideoPlaying && (moveStep !== 0 || rotChange !== 0)) {
-        closeVideo();
-        return; // Don't move this frame, just close video
-    }
-
-    // If video is playing, lock movement
-    if (state.isVideoPlaying) return;
-
-    player.rot += rotChange;
-
-    if (moveStep !== 0) {
-        const nextX = player.x - Math.sin(player.rot) * moveStep;
-        const nextZ = player.z - Math.cos(player.rot) * moveStep;
-
-        const targetY = getGroundHeight(nextX, nextZ);
-
-        if (!checkCollision(nextX, nextZ, targetY)) {
-            player.x = nextX;
-            player.z = nextZ;
-            player.y = targetY;
-        }
-    }
-
-    camera.position.x = player.x;
-    camera.position.z = player.z;
-    camera.position.y = player.y + CONFIG.eyeHeight;
-    camera.rotation.y = player.rot;
-
-    const frustum = new THREE.Frustum();
-    frustum.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
-
-    state.covers.forEach(cover => {
-        if (cover.userData.viewed) return;
-        const worldPos = new THREE.Vector3();
-        cover.getWorldPosition(worldPos);
-        if (worldPos.distanceTo(camera.position) < 8 && frustum.containsPoint(worldPos)) {
-            // Raycast check to ensure line of sight
-            const raycaster = new THREE.Raycaster();
-            const dir = worldPos.clone().sub(camera.position).normalize();
-            raycaster.set(camera.position, dir);
-
-            // Intersect with walls and obstacles
-            const intersects = raycaster.intersectObjects(scene.children, true);
-
-            // Check if the first intersection is the cover itself (or very close to it)
-            if (intersects.length > 0) {
-                const firstHit = intersects[0];
-                // Allow some tolerance or check if hit object is the cover
-                if (firstHit.object === cover || firstHit.distance >= worldPos.distanceTo(camera.position) - 0.5) {
-                    cover.userData.viewed = true;
-                    state.viewedCovers.add(cover.userData.id);
-                    cover.material.emissive.setHex(0x000000);
-                    const pct = Math.floor((state.viewedCovers.size / CONFIG.totalCovers) * 100);
-                    document.getElementById('completion-rate').innerText = `${pct}%`;
-                    document.getElementById('progress-fill').style.width = `${pct}%`;
+                // Close if player moves too far away OR looks away significantly
+                if (dist > 2.5 || dot < 0.5) {
+                    // console.log('Auto-closing overlay - dist:', dist.toFixed(2), 'dot:', dot.toFixed(2));
+                    closeOverlay();
                 }
             }
         }
-    });
+    }
 }
 
 function checkInteraction() {
@@ -1762,6 +1680,7 @@ function checkInteraction() {
 
                 // Release pointer lock when video starts
                 document.exitPointerLock();
+                document.getElementById('video-close-btn').classList.remove('hidden');
             }
         } else {
             openOverlay(closest);
