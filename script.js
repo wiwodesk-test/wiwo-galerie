@@ -55,7 +55,7 @@ state.loadingManager.onStart = function (url, itemsLoaded, itemsTotal) {
 };
 
 state.loadingManager.onLoad = function () {
-    console.log('✅ All initial assets loaded');
+        // console.log('✅ All initial assets loaded');
     const loadingText = document.querySelector('.loading-text');
     if (loadingText) {
         loadingText.innerText = 'Lade Galerie ... 100%';
@@ -69,7 +69,7 @@ state.loadingManager.onLoad = function () {
 
 state.loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
     state.texturesLoaded = itemsLoaded;
-    console.log(`Loading: ${itemsLoaded}/${itemsTotal} (${url})`);
+        // console.log(`Loading: ${itemsLoaded}/${itemsTotal} (${url})`);
     const loadingText = document.querySelector('.loading-text');
     if (loadingText) {
         // Ensure we don't show > 100%
@@ -79,7 +79,7 @@ state.loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
 };
 
 state.loadingManager.onError = function (url) {
-    console.error('❌ Error loading texture:', url);
+        // console.error('❌ Error loading texture:', url);
 };
 
 // Use loading manager for texture loader (Legacy/Blocking if needed)
@@ -229,7 +229,7 @@ function init() {
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen) loadingScreen.classList.remove('hidden');
 
-    console.log('🚀 Init started');
+        // console.log('🚀 Init started');
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87ceeb); // Sky blue background
     scene.fog = new THREE.Fog(0xb0d4f1, 10, 100); // Light blue fog for spring day
@@ -252,16 +252,6 @@ function init() {
         // Check for small screens (old phones)
         const smallScreen = Math.min(window.innerWidth, window.innerHeight) < 800;
 
-        // ONLY flag as low perf if it's a mobile/tablet device
-        // Desktop/laptop should NEVER be flagged as low-perf, even with small windows
-        const isMobile = isAndroid || /Mobile/i.test(ua) || /iPad|iPhone|iPod/.test(ua);
-
-        if (!isMobile && !isTablet) {
-            // Desktop/laptop - always high performance
-            return false;
-        }
-
-        // For mobile/tablet, check if it meets low-spec criteria
         return (isAndroid && isTablet) || lowMemory || smallScreen;
     })();
 
@@ -288,37 +278,33 @@ function init() {
     // Store flag for later use
     state.isLowPerf = isLowPerf;
 
-    // Artificial start to prevent premature onLoad if queue is empty initially
-    state.loadingManager.itemStart('initial-setup');
+    // CSS3D Renderer for YouTube video
+    cssScene = new THREE.Scene();
+    cssRenderer = new THREE.CSS3DRenderer();
+    cssRenderer.setSize(window.innerWidth, window.innerHeight);
+    cssRenderer.domElement.style.position = 'absolute';
+    cssRenderer.domElement.style.top = '0';
+    cssRenderer.domElement.style.pointerEvents = 'none';
+    document.getElementById('canvas-container').appendChild(cssRenderer.domElement);
 
+        // console.log('🏗️ Building gallery...');
     try {
-        // CSS3D Renderer for YouTube video
-        cssScene = new THREE.Scene();
-        cssRenderer = new THREE.CSS3DRenderer();
-        cssRenderer.setSize(window.innerWidth, window.innerHeight);
-        cssRenderer.domElement.style.position = 'absolute';
-        cssRenderer.domElement.style.top = '0';
-        cssRenderer.domElement.style.pointerEvents = 'none';
-        document.getElementById('canvas-container').appendChild(cssRenderer.domElement);
-
-        console.log('🏗️ Building gallery...');
-        state.materials = {}; // Explicitly initialize materials object
         buildGallery();
-        console.log('✅ Gallery built. Scene children:', scene.children.length);
-
-        console.log('💡 Setting up lighting...');
-        setupLighting();
-        createSkybox();
-        createLightSwitch();
-
-        console.log('🎨 Loading high-quality assets...');
-        loadHighQualityAssets();
+        // console.log('✅ Gallery built. Scene children:', scene.children.length);
     } catch (e) {
-        console.error('❌ Critical error during init:', e);
-    } finally {
-        // Release the artificial lock
-        state.loadingManager.itemEnd('initial-setup');
+        // console.error('❌ Error building gallery:', e);
     }
+
+        // console.log('💡 Setting up lighting...');
+    setupLighting();
+    createSkybox();
+    createLightSwitch();
+
+        // console.log('🎨 Loading high-quality assets...');
+    loadHighQualityAssets();
+
+    // Release the artificial lock
+    state.loadingManager.itemEnd('initial-setup');
 
     window.addEventListener('resize', onWindowResize, false);
 
@@ -457,7 +443,7 @@ function init() {
     // Force hide loading screen after 5 seconds just in case
     setTimeout(() => {
         if (!state.galleryReady) {
-            console.warn('Loading timed out, forcing start.');
+            // Loading timed out
             hideLoadingScreen();
             state.galleryReady = true;
         }
@@ -579,7 +565,7 @@ function init() {
         }
 
     } catch (e) {
-        console.warn('Post-processing setup failed, falling back to basic renderer:', e);
+        // Post-processing failed
         composer = null;
     }
 
@@ -644,14 +630,17 @@ function init() {
 
         if (state.keys.hasOwnProperty(e.code)) state.keys[e.code] = true;
 
-        // Close overlay with Escape
-        if (e.code === 'Escape' && state.isOverlayOpen) {
-            e.preventDefault();
-            closeOverlay();
-            return;
+        // Close overlay with Escape or navigation keys
+        if (state.isOverlayOpen) {
+            if (e.code === 'Escape' || ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyS', 'KeyA', 'KeyD'].includes(e.code)) {
+                e.preventDefault();
+                closeOverlay();
+                return;
+            }
         }
 
         if (e.code === 'Enter') {
+        // console.log('⌨️  Enter key pressed!');
             checkInteraction();
         }
     }
@@ -666,40 +655,80 @@ function init() {
         dirLight.position.set(10, 30, 10);
         dirLight.castShadow = true;
 
-        // STABLE SHADOWS - No Flickering
-        // Adjust shadow map size for low-performance devices
-        dirLight.shadow.mapSize.width = state.isLowPerf ? 1024 : 2048;
-        dirLight.shadow.mapSize.height = state.isLowPerf ? 1024 : 2048;
+        // Configure shadow properties
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 500;
         dirLight.shadow.camera.left = -50;
         dirLight.shadow.camera.right = 50;
         dirLight.shadow.camera.top = 50;
         dirLight.shadow.camera.bottom = -50;
-        dirLight.shadow.camera.near = 0.5;
-        dirLight.shadow.camera.far = 100;
-        dirLight.shadow.bias = -0.001;
 
-        dirLight.name = 'mainDir';
         scene.add(dirLight);
+    }
 
-        // Add PointLights for interior warmth (optional, can be disabled on low perf)
-        if (!state.isLowPerf) {
-            const lightColor = 0xffaa00;
-            const intensity = 0.5;
-            const distance = 15;
-            const decay = 2;
+    function createLightSwitch() {
+        // Light switch housing
+        const geo = new THREE.BoxGeometry(0.2, 0.4, 0.1);
+        const mat = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
+        const housing = new THREE.Mesh(geo, mat);
 
-            const positions = [
-                [5, 5], [15, 5], [5, 15], [15, 15]
-            ];
+        const btnGeo = new THREE.BoxGeometry(0.1, 0.2, 0.05);
+        const btnMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        const btn = new THREE.Mesh(btnGeo, btnMat);
+        btn.position.z = 0.05;
+        housing.add(btn);
 
-            positions.forEach((pos, i) => {
-                const pl = new THREE.PointLight(lightColor, intensity, distance, decay);
-                pl.position.set(pos[0], 4, pos[1]);
-                pl.castShadow = false; // Too expensive
-                pl.name = `roomLight_${i}`;
-                scene.add(pl);
-            });
-        }
+        // Place on the central pillar/obstacle (4x4 block at x=10, z=20)
+        // This is the empty wall space at the center between all four rooms
+        // Placing on the West side facing Room 1, at x=8 (edge of the 4x4 block)
+        housing.position.set(7.9, 1.5, 20);
+        housing.rotation.y = -Math.PI / 2;
+
+        housing.userData = { type: 'switch' };
+        scene.add(housing);
+        state.interactables.push(housing);
+    }
+
+    function toggleLights() {
+        CONFIG.lightsOn = !CONFIG.lightsOn;
+
+        // Toggle between Warm (Default) and Cool/Bright modes
+        scene.traverse((obj) => {
+            if (obj.isLight) {
+                if (obj.name === 'mainHemi') {
+                    // Hemisphere light
+                    if (CONFIG.lightsOn) {
+                        // Warm Mode
+                        obj.color.setHex(0xffffff);
+                        obj.groundColor.setHex(0x888888);
+                        obj.intensity = 0.5;
+                    } else {
+                        // Cool/Bright Mode
+                        obj.color.setHex(0xddeeff);
+                        obj.groundColor.setHex(0x8888aa);
+                        obj.intensity = 0.6;
+                    }
+                } else if (obj.isDirectionalLight) {
+                    // Directional light
+                    if (CONFIG.lightsOn) {
+                        // Warm Mode
+                        obj.color.setHex(0xfff4e6);
+                        obj.intensity = 0.8;
+                    } else {
+                        // Cool/Bright Mode
+                        obj.color.setHex(0xffffff);
+                        obj.intensity = 0.9;
+                    }
+                } else if (obj.isPointLight || obj.isSpotLight) {
+                    // Keep point/spot lights bright in both modes
+                    obj.intensity = 1.0;
+                }
+            }
+        });
+
+        // console.log(`💡 Lights ${CONFIG.lightsOn ? 'WARM' : 'COOL'}`);
     }
 
     function createSkyTexture() {
@@ -759,56 +788,14 @@ function init() {
         scene.add(sky);
     }
 
-    function createLightSwitch() {
-        const geo = new THREE.BoxGeometry(0.2, 0.4, 0.1);
-        const mat = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
-        const housing = new THREE.Mesh(geo, mat);
-
-        const btnGeo = new THREE.BoxGeometry(0.1, 0.2, 0.05);
-        const btnMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-        const btn = new THREE.Mesh(btnGeo, btnMat);
-        btn.position.z = 0.05;
-        housing.add(btn);
-
-        housing.position.set(7.9, 1.5, 20);
-        housing.rotation.y = -Math.PI / 2;
-
-        housing.userData = { type: 'switch' };
-        scene.add(housing);
-        state.interactables.push(housing);
-    }
-
-    function toggleLights() {
-        CONFIG.lightsOn = !CONFIG.lightsOn;
-        const intensityMult = CONFIG.lightsOn ? 1 : 0.2;
-
-        const hemi = scene.getObjectByName('mainHemi');
-        if (hemi) hemi.intensity = 0.5 * intensityMult;
-
-        const dir = scene.getObjectByName('mainDir');
-        if (dir) dir.intensity = 0.8 * intensityMult;
-
-        for (let i = 0; i < 4; i++) {
-            const pl = scene.getObjectByName(`roomLight_${i}`);
-            if (pl) pl.intensity = 0.5 * intensityMult;
-        }
-
-        for (let i = 0; i < 2; i++) {
-            const pl = scene.getObjectByName(`upperLight_${i}`);
-            if (pl) pl.intensity = 0.5 * intensityMult;
-        }
-    }
-
-
     function buildGallery() {
         // STRUCTURE FIRST - Placeholders
         const floorMat = new THREE.MeshStandardMaterial({
             color: 0xaaaaaa,
-            roughness: 0.15,  // Lower roughness = more reflective
-            metalness: 0.2    // Higher metalness = more metallic reflections
+            roughness: 0.25,
+            metalness: 0.05
         });
         state.materials.floor = floorMat;
-        state.materials.steps = floorMat; // Reuse floor material for steps
 
         const ceilingMat = new THREE.MeshStandardMaterial({
             color: 0x555555,
@@ -1672,7 +1659,7 @@ function init() {
 
         ctx.fillStyle = '#aaaaaa';
         ctx.font = `${30 * scale}px sans-serif`;
-        ctx.fillText('JUBILÄUMSAUSGABE', width / 2, 550 * scale);
+        ctx.fillText('Einen Moment Geduld ...', width / 2, 550 * scale);
 
         const canvasTex = new THREE.CanvasTexture(canvas);
         canvasTex.encoding = THREE.sRGBEncoding;
@@ -1686,27 +1673,22 @@ function init() {
 
             // Use managed loader for low-res covers (blocking), lazy loader for high-res (non-blocking)
             const loader = highRes ? state.lazyTextureLoader : state.textureLoader;
-            loader.load(imagePath, (t) => {
-                t.encoding = THREE.sRGBEncoding;
-                t.flipY = true;
 
-                // If a material was passed, update it directly
-                if (material) {
-                    material.map = t;
-                    material.needsUpdate = true;
-                } else {
-                    // If no material passed (e.g. for overlay), we might need to handle it differently
-                    // But typically overlay uses the img tag or updates the mesh
-                    // For the overlay function, it usually creates a new texture.
-                    // If we returned the canvasTex, we can't easily swap it unless we copy the image to the canvas
-                    // OR if the caller uses the texture in a material, we need that material reference.
+            const loadTexture = () => {
+                loader.load(imagePath, (t) => {
+                    t.encoding = THREE.sRGBEncoding;
+                    t.flipY = true;
 
-                    // However, for the wall covers, 'material' is passed.
-                    // For the overlay, 'openOverlay' calls this with highRes=true.
-                    // openOverlay uses an <img> tag for highRes usually, or a canvas.
-                    // Let's check openOverlay.
-                }
-            });
+                    // If a material was passed, update it directly
+                    if (material) {
+                        material.map = t;
+                        material.needsUpdate = true;
+                    }
+                });
+            };
+
+            loadTexture();
+
         }
 
         return canvasTex;
@@ -1752,30 +1734,8 @@ function init() {
                     opacity: 1.0
                 });
 
-                // Load low‑res image if available, using cache
-                if (COVERS_DATA && COVERS_DATA[coverIndex] && COVERS_DATA[coverIndex].lowRes) {
-                    // console.log(`Queuing load for cover ${coverIndex}: ${COVERS_DATA[coverIndex].lowRes}`);
-                    let tex;
-                    if (state.lowResCache.has(coverIndex)) {
-                        tex = state.lowResCache.get(coverIndex);
-                    } else {
-                        // Use the managed loader (state.textureLoader) so the LoadingManager waits for it
-                        tex = state.textureLoader.load(COVERS_DATA[coverIndex].lowRes);
-                        tex.encoding = THREE.sRGBEncoding;
-                        tex.flipY = true;
-                        tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-                        state.lowResCache.set(coverIndex, tex);
-                    }
-                    mat.map = tex;
-                } else {
-                    // console.log(`No low-res image for cover ${coverIndex}, using procedural`);
-                    // Fallback to procedural low‑res texture - BUT use immediate canvas, not async loader
-                    // Since createCoverTexture is now async-capable, we should avoid it here to prevent race conditions
-                    // or ensure it uses the managed loader if we really need it.
-                    // For now, let's just leave it blank or use a simple color if no image.
-                    // mat.color.setHex(0x333333);
-                    mat.map = createCoverTexture(coverIndex, false, null); // Use synchronous procedural generation
-                }
+                // Use createCoverTexture to generate placeholder immediately and load image asynchronously
+                mat.map = createCoverTexture(coverIndex, false, mat);
                 mat.needsUpdate = true;
                 const mesh = new THREE.Mesh(coverGeo, mat);
                 mesh.userData = { id: coverIndex, viewed: false };
@@ -1866,7 +1826,6 @@ function init() {
     }
 
     function openOverlay(cover) {
-        // console.log('openOverlay called for cover:', cover.userData.id, 'current state.isOverlayOpen:', state.isOverlayOpen);
         state.isOverlayOpen = true;
         state.currentCoverId = cover.userData.id;
         if (!isIOS && document.exitPointerLock) {
@@ -1931,17 +1890,12 @@ function init() {
         container.appendChild(img);
 
         const overlay = document.getElementById('cover-overlay');
-        overlay.classList.remove('hidden');
-        // Force visibility
-        overlay.style.opacity = '1';
-        overlay.style.visibility = 'visible';
-        overlay.style.pointerEvents = 'auto';
-        // console.log('openOverlay complete, state.isOverlayOpen:', state.isOverlayOpen, 'overlay styles:', {
-        //     display: window.getComputedStyle(overlay).display,
-        //     opacity: window.getComputedStyle(overlay).opacity,
-        //     visibility: window.getComputedStyle(overlay).visibility,
-        //     zIndex: window.getComputedStyle(overlay).zIndex
-        // });
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            overlay.style.setProperty('opacity', '1', 'important');
+            overlay.style.setProperty('visibility', 'visible', 'important');
+            overlay.style.setProperty('pointer-events', 'auto', 'important');
+        }
     }
 
     function closeOverlay() {
@@ -2134,9 +2088,8 @@ function init() {
         }
     }
 
-    function checkInteraction() {
-        if (state.isOverlayOpen) return;
-
+    // Helper function to find the closest interactable object
+    function findClosestInteractable() {
         let closest = null;
         let minDist = CONFIG.interactionDist;
 
@@ -2169,6 +2122,19 @@ function init() {
                 }
             }
         });
+
+        return closest;
+    }
+
+    function checkInteraction() {
+        // console.log('🔍 checkInteraction called. isOverlayOpen:', state.isOverlayOpen, 'closestInteractable:', state.closestInteractable?.userData);
+        if (state.isOverlayOpen) return;
+
+        // Use the cached interactable that triggered the prompt
+        // This ensures WYSIWYG: If the prompt is visible, the action works.
+        // We fallback to findClosestInteractable() only if cache is missing (shouldn't happen if prompt is visible)
+        const closest = state.closestInteractable || findClosestInteractable();
+        // console.log('🎯 checkInteraction - closest object:', closest?.userData, 'type:', closest?.userData?.type);
 
         if (closest) {
             if (closest.userData.type === 'switch') {
@@ -2210,8 +2176,11 @@ function init() {
                     document.getElementById('video-close-btn').classList.remove('hidden');
                 }
             } else {
+        // console.log('📖 Opening overlay for cover:', closest.userData.id);
                 openOverlay(closest);
             }
+        } else {
+        // console.log('❌ checkInteraction - no closest object found!');
         }
     }
 
@@ -2221,47 +2190,15 @@ function init() {
             return;
         }
 
-        let closest = null;
-        let minDist = CONFIG.interactionDist;
+        const closest = findClosestInteractable();
 
-        state.covers.forEach(cover => {
-            const worldPos = new THREE.Vector3();
-            cover.getWorldPosition(worldPos);
-            const dist = worldPos.distanceTo(camera.position);
-            if (dist < minDist) {
-                const dir = new THREE.Vector3();
-                camera.getWorldDirection(dir);
-                const toCover = worldPos.clone().sub(camera.position).normalize();
-                const dot = dir.dot(toCover);
-                if (dot > 0.8) {
-                    closest = cover;
-                    minDist = dist;
-                }
-            }
-        });
-
-        state.interactables.forEach(obj => {
-            const dist = obj.position.distanceTo(camera.position);
-            if (dist < minDist) {
-                const dir = new THREE.Vector3();
-                camera.getWorldDirection(dir);
-                const toObj = obj.position.clone().sub(camera.position).normalize();
-                const dot = dir.dot(toObj);
-                if (dot > 0.8) {
-                    closest = obj;
-                    minDist = dist;
-                }
-            }
-        });
+        // Cache it for other uses (checkInteraction)
+        state.closestInteractable = closest;
 
         const prompt = document.getElementById('interaction-prompt');
         if (closest) {
             if (closest.userData.type === 'switch') {
-                if (CONFIG.lightsOn) {
-                    prompt.innerText = 'Dimme das Licht';
-                } else {
-                    prompt.innerText = 'Mehr Licht';
-                }
+                prompt.innerText = 'Licht ändern';
             } else if (closest.userData.type === 'remote') {
                 prompt.innerText = state.isVideoPlaying ? 'Video stoppen' : 'Video abspielen';
             } else if (closest.userData.type === 'podcast') {
@@ -2275,6 +2212,7 @@ function init() {
             } else {
                 prompt.innerText = 'Ansehen';
             }
+        // console.log('✅ Showing prompt:', prompt.innerText, 'for object:', closest.userData);
             prompt.classList.remove('hidden');
         } else {
             prompt.classList.add('hidden');
@@ -2288,8 +2226,15 @@ function init() {
         try {
             if (!scene || !camera || !renderer) return;
 
-            updateMovement();
+            // Update interaction prompt always (to hide it when overlay is open)
             updateInteractionPrompt();
+
+            // Skip movement and rendering when overlay is open
+            if (state.isOverlayOpen) {
+                return;
+            }
+
+            updateMovement();
 
             if (composer) {
                 composer.render();
@@ -2307,7 +2252,7 @@ function init() {
             }
         } catch (e) {
             if (!hasLoggedError) {
-                console.error('❌ Error in animation loop:', e);
+        // console.error('❌ Error in animation loop:', e);
                 hasLoggedError = true;
             }
         }
