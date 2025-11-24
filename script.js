@@ -778,6 +778,28 @@ function init() {
         state.interactables.push(housing);
     }
 
+    function toggleLights() {
+        CONFIG.lightsOn = !CONFIG.lightsOn;
+        const intensityMult = CONFIG.lightsOn ? 1 : 0.2;
+
+        const hemi = scene.getObjectByName('mainHemi');
+        if (hemi) hemi.intensity = 0.5 * intensityMult;
+
+        const dir = scene.getObjectByName('mainDir');
+        if (dir) dir.intensity = 0.8 * intensityMult;
+
+        for (let i = 0; i < 4; i++) {
+            const pl = scene.getObjectByName(`roomLight_${i}`);
+            if (pl) pl.intensity = 0.5 * intensityMult;
+        }
+
+        for (let i = 0; i < 2; i++) {
+            const pl = scene.getObjectByName(`upperLight_${i}`);
+            if (pl) pl.intensity = 0.5 * intensityMult;
+        }
+    }
+
+
     function buildGallery() {
         // STRUCTURE FIRST - Placeholders
         const floorMat = new THREE.MeshStandardMaterial({
