@@ -9,8 +9,8 @@
 const COVERS_DATA = [
     {
         id: 0,
-        lowRes: "assets/covers/low/cover_01.webp",
-        highRes: "assets/covers/high/cover_01.webp",
+        lowRes: "assets/covers/low/cover_01.jpg",
+        highRes: "assets/covers/high/cover_01.jpg",
         title: "Die erste Ausgabe",
         description: "1926 startet die Vorgängerzeitschrift der WirtschaftsWoche in Berlin."
     }
@@ -21,8 +21,8 @@ for (let i = 1; i < 42; i++) {
     const num = (i + 1).toString().padStart(2, '0');
     COVERS_DATA.push({
         id: i,
-        lowRes: `assets/covers/low/cover_${num}.webp`,
-        highRes: `assets/covers/high/cover_${num}.webp`,
+        lowRes: `assets/covers/low/cover_${num}.jpg`,
+        highRes: `assets/covers/high/cover_${num}.jpg`,
         title: `Magazine Issue #${i + 1}`,
         description: `Description for issue #${i + 1}`
     });
