@@ -383,7 +383,7 @@ canvas {
     transform: translateX(-50%);
     width: 160px;
     height: 160px;
-    z-index: 100;
+    z-index: 100000;
     display: none;
     justify-content: center;
     align-items: center;
@@ -668,5 +668,79 @@ canvas {
     .welcome-content {
         padding: 20px;
         width: 90%;
+    }
+}
+
+/* Mobile Overlay - Optimized for Joystick */
+@media (pointer: coarse),
+(max-width: 768px) {
+    .overlay-content {
+        flex-direction: column !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        background: #050505 !important;
+        display: flex !important;
+        overflow: hidden !important;
+    }
+
+    #overlay-image-container {
+        width: 100% !important;
+        height: 40vh !important;
+        flex-shrink: 0 !important;
+        background: #000 !important;
+        border: none !important;
+        padding: 20px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        margin-top: 0 !important;
+    }
+
+    #overlay-image-container canvas,
+    #overlay-image-container img {
+        max-width: 100% !important;
+        max-height: 100% !important;
+        object-fit: contain !important;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    #overlay-info {
+        width: 100% !important;
+        flex: 1 !important;
+        padding: 20px !important;
+        padding-bottom: 200px !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    #overlay-title {
+        font-size: 1.8rem !important;
+        margin-bottom: 15px !important;
+        padding-bottom: 10px !important;
+    }
+
+    #overlay-desc {
+        font-size: 0.95rem !important;
+        line-height: 1.6 !important;
+    }
+
+    #close-btn {
+        top: 10px !important;
+        right: 10px !important;
+        color: var(--color-accent) !important;
+        background: rgba(0, 0, 0, 0.8) !important;
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 50% !important;
+        border: 2px solid var(--color-accent) !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        font-size: 28px !important;
+        z-index: 100001 !important;
     }
 }
