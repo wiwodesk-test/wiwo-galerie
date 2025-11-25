@@ -55,7 +55,7 @@ state.loadingManager.onStart = function (url, itemsLoaded, itemsTotal) {
 };
 
 state.loadingManager.onLoad = function () {
-        // console.log('✅ All initial assets loaded');
+    // console.log('✅ All initial assets loaded');
     const loadingText = document.querySelector('.loading-text');
     if (loadingText) {
         loadingText.innerText = 'Lade Galerie ... 100%';
@@ -69,7 +69,7 @@ state.loadingManager.onLoad = function () {
 
 state.loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
     state.texturesLoaded = itemsLoaded;
-        // console.log(`Loading: ${itemsLoaded}/${itemsTotal} (${url})`);
+    // console.log(`Loading: ${itemsLoaded}/${itemsTotal} (${url})`);
     const loadingText = document.querySelector('.loading-text');
     if (loadingText) {
         // Ensure we don't show > 100%
@@ -79,7 +79,7 @@ state.loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
 };
 
 state.loadingManager.onError = function (url) {
-        // console.error('❌ Error loading texture:', url);
+    // console.error('❌ Error loading texture:', url);
 };
 
 // Use loading manager for texture loader (Legacy/Blocking if needed)
@@ -229,7 +229,7 @@ function init() {
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen) loadingScreen.classList.remove('hidden');
 
-        // console.log('🚀 Init started');
+    // console.log('🚀 Init started');
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87ceeb); // Sky blue background
     scene.fog = new THREE.Fog(0xb0d4f1, 10, 100); // Light blue fog for spring day
@@ -287,7 +287,7 @@ function init() {
     cssRenderer.domElement.style.pointerEvents = 'none';
     document.getElementById('canvas-container').appendChild(cssRenderer.domElement);
 
-        // console.log('🏗️ Building gallery...');
+    // console.log('🏗️ Building gallery...');
     try {
         buildGallery();
         // console.log('✅ Gallery built. Scene children:', scene.children.length);
@@ -295,12 +295,12 @@ function init() {
         // console.error('❌ Error building gallery:', e);
     }
 
-        // console.log('💡 Setting up lighting...');
+    // console.log('💡 Setting up lighting...');
     setupLighting();
     createSkybox();
     createLightSwitch();
 
-        // console.log('🎨 Loading high-quality assets...');
+    // console.log('🎨 Loading high-quality assets...');
     loadHighQualityAssets();
 
     // Release the artificial lock
@@ -630,9 +630,9 @@ function init() {
 
         if (state.keys.hasOwnProperty(e.code)) state.keys[e.code] = true;
 
-        // Close overlay with Escape or navigation keys
+        // Close overlay with Escape or any navigation key except forward (W/ArrowUp)
         if (state.isOverlayOpen) {
-            if (e.code === 'Escape' || ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyS', 'KeyA', 'KeyD'].includes(e.code)) {
+            if (e.code === 'Escape' || ['ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyS', 'KeyA', 'KeyD'].includes(e.code)) {
                 e.preventDefault();
                 closeOverlay();
                 return;
@@ -640,7 +640,7 @@ function init() {
         }
 
         if (e.code === 'Enter') {
-        // console.log('⌨️  Enter key pressed!');
+            // console.log('⌨️  Enter key pressed!');
             checkInteraction();
         }
     }
@@ -2176,11 +2176,11 @@ function init() {
                     document.getElementById('video-close-btn').classList.remove('hidden');
                 }
             } else {
-        // console.log('📖 Opening overlay for cover:', closest.userData.id);
+                // console.log('📖 Opening overlay for cover:', closest.userData.id);
                 openOverlay(closest);
             }
         } else {
-        // console.log('❌ checkInteraction - no closest object found!');
+            // console.log('❌ checkInteraction - no closest object found!');
         }
     }
 
@@ -2212,7 +2212,7 @@ function init() {
             } else {
                 prompt.innerText = 'Ansehen';
             }
-        // console.log('✅ Showing prompt:', prompt.innerText, 'for object:', closest.userData);
+            // console.log('✅ Showing prompt:', prompt.innerText, 'for object:', closest.userData);
             prompt.classList.remove('hidden');
         } else {
             prompt.classList.add('hidden');
@@ -2252,7 +2252,7 @@ function init() {
             }
         } catch (e) {
             if (!hasLoggedError) {
-        // console.error('❌ Error in animation loop:', e);
+                // console.error('❌ Error in animation loop:', e);
                 hasLoggedError = true;
             }
         }
