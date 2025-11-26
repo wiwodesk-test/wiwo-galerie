@@ -46,8 +46,81 @@ const state = {
     highResCache: new Map(), // Cache for high-res overlay images
     lowResCache: new Map(), // Cache for low-res cover textures
     materials: {}, // Cache for materials to update with textures later
-    experienceStarted: false // Flag to track if user has started the experience
+    experienceStarted: false, // Flag to track if user has started the experience
+    achievements: {
+        lightFound: false,
+        firstFound: false,
+        floorFound: false
+    }
 };
+
+function unlockAchievement(id) {
+    if (state.achievements[id]) return; // Already unlocked
+    state.achievements[id] = true;
+
+    const achievementData = {
+        lightFound: {
+            elementId: 'achievement-light',
+            icon: '💡',
+            title: 'Lichtschalter gefunden!',
+            text: ''
+        },
+        firstFound: {
+            elementId: 'achievement-first',
+            icon: '📰',
+            title: 'Erstausgabe gefunden!',
+            text: 'Gehe näher, um sie zu betrachten'
+        },
+        floorFound: {
+            elementId: 'achievement-floor',
+            icon: '🏛️',
+            title: '1. Etage erreicht!',
+            text: 'Jetzt schaue dir das Video an'
+        }
+    }[id];
+
+    if (!achievementData) return;
+
+    // Update achievement in UI
+    const el = document.getElementById(achievementData.elementId);
+    if (el) {
+        el.classList.add('unlocked');
+        const check = el.querySelector('.achievement-check');
+        if (check) check.innerText = '☑';
+    }
+
+    // Show notification toast
+    showAchievementNotification(achievementData.icon, achievementData.title, achievementData.text);
+}
+
+function showAchievementNotification(icon, title, text) {
+    // Create notification element if it doesn't exist
+    let notification = document.getElementById('achievement-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'achievement-notification';
+        notification.className = 'achievement-notification';
+        notification.innerHTML = `
+            <div class="achievement-notification-icon"></div>
+            <div class="achievement-notification-title"></div>
+            <div class="achievement-notification-text"></div>
+        `;
+        document.body.appendChild(notification);
+    }
+
+    // Update content
+    notification.querySelector('.achievement-notification-icon').textContent = icon;
+    notification.querySelector('.achievement-notification-title').textContent = title;
+    notification.querySelector('.achievement-notification-text').textContent = text;
+
+    // Show notification
+    notification.classList.add('show');
+
+    // Hide after 3 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 3000);
+}
 
 // Setup loading manager callbacks (Optional now, but kept for debug)
 state.loadingManager.onStart = function (url, itemsLoaded, itemsTotal) {
@@ -200,8 +273,8 @@ function startExperience() {
 
 
 let scene, camera, renderer, cssScene, cssRenderer;
-// Spawn player at (5, 6) facing South (towards central pillar) to see gallery and avoid bench
-let player = { x: 5, y: 0, z: 6, rot: Math.PI };
+// Spawn player at (5, 6) facing Southwest
+let player = { x: 5, y: 0, z: 6, rot: Math.PI * 0.25 };
 
 function getGroundHeight(x, z) {
     // Stairs in Room 2 (NE)
@@ -693,6 +766,7 @@ function init() {
 
     function toggleLights() {
         CONFIG.lightsOn = !CONFIG.lightsOn;
+        unlockAchievement('lightFound');
 
         // Toggle between Warm (Default) and Cool/Bright modes
         scene.traverse((obj) => {
@@ -2016,6 +2090,10 @@ function init() {
         camera.position.y = player.y + CONFIG.eyeHeight;
         camera.rotation.y = player.rot;
 
+        if (player.y > 4.0) {
+            unlockAchievement('floorFound');
+        }
+
         const frustum = new THREE.Frustum();
         frustum.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
 
@@ -2063,6 +2141,12 @@ function init() {
                         if (firstHit.object === cover || firstHit.distance >= dist - 0.5) {
                             cover.userData.viewed = true;
                             state.viewedCovers.add(cover.userData.id);
+
+                            // Check for First Issue (Cover 0)
+                            if (cover.userData.id === 0) {
+                                unlockAchievement('firstFound');
+                            }
+
                             cover.material.emissive.setHex(0x050505); // Subtle glow
                             const pct = Math.floor((state.viewedCovers.size / CONFIG.totalCovers) * 100);
                             document.getElementById('completion-rate').innerText = `${pct}%`;
