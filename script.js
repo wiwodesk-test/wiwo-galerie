@@ -10,7 +10,7 @@ const CONFIG = {
     wallHeight: 5,
     wallThickness: 0.5,
     roomSize: 20,
-    collisionRadius: 1, // Standard "Personal Space" radius
+    collisionRadius: 0.5, // Reduced for easier navigation around plants and benches
     stairRadius: 0.3, // Very tight radius for smooth stair navigation
     eyeHeight: 1.7,
     totalCovers: 100,
@@ -1988,10 +1988,26 @@ function init() {
 
             const targetY = getGroundHeight(nextX, nextZ);
 
+            // Try full movement first
             if (!checkCollision(nextX, nextZ, targetY)) {
                 player.x = nextX;
                 player.z = nextZ;
                 player.y = targetY;
+            } else {
+                // Collision sliding: try moving along X axis only
+                const targetYX = getGroundHeight(nextX, player.z);
+                if (!checkCollision(nextX, player.z, targetYX)) {
+                    player.x = nextX;
+                    player.y = targetYX;
+                } else {
+                    // Try moving along Z axis only
+                    const targetYZ = getGroundHeight(player.x, nextZ);
+                    if (!checkCollision(player.x, nextZ, targetYZ)) {
+                        player.z = nextZ;
+                        player.y = targetYZ;
+                    }
+                    // If both fail, player stays in place (hard collision)
+                }
             }
         }
 
@@ -2179,10 +2195,11 @@ function init() {
                 // console.log('📖 Opening overlay for cover:', closest.userData.id);
                 openOverlay(closest);
             }
-        } else {
-            // console.log('❌ checkInteraction - no closest object found!');
         }
     }
+
+    // Expose checkInteraction to global scope for button click handler
+    window.checkInteraction = checkInteraction;
 
     function updateInteractionPrompt() {
         if (state.isOverlayOpen) {
@@ -2277,4 +2294,16 @@ let composer;
 // Wait for DOM to be ready before starting init
 document.addEventListener('DOMContentLoaded', () => {
     init();
+
+    // Add click handler for interaction prompt button
+    const interactionPrompt = document.getElementById('interaction-prompt');
+    if (interactionPrompt) {
+        interactionPrompt.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Call the checkInteraction function from the init scope
+            if (window.checkInteraction) {
+                window.checkInteraction();
+            }
+        });
+    }
 });
