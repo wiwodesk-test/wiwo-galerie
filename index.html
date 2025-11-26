@@ -63,11 +63,9 @@
             background: #111;
         }
     </style>
+    <!-- WiWo Design System Fonts -->
+    <link rel="stylesheet" href="https://designsystem.hmgassets.com/fonts/wiwo/styles.css">
     <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- Three.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -83,113 +81,136 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SimplexNoise.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
+    <!-- WiWo Design System Web Components Loader -->
+    <script type="module">
+        (async () => {
+            try {
+                const loader = await import('https://designsystem.hmgassets.com/webcomponents/loader.js');
+                const webcomponentApp = await loader.getWebComponents({ prefix: 'wiwo' });
+                await webcomponentApp.loadComponents(['theme-wiwo', 'rich-text', 'title', 'logo-wiwo', 'button', 'headline', 'lead-text', 'icon']);
+                console.log('✅ WiWo Design System loaded successfully');
+            } catch (error) {
+                console.warn('⚠️ WiWo Design System failed to load:', error);
+            }
+        })();
+    </script>
 </head>
 
 <body>
-    <!-- Loading Screen -->
-    <div id="loading-screen">
-        <div class="loading-content">
-            <div class="logo">WiWo</div>
-            <div class="spinner"></div>
-            <div class="loading-text">Lade Galerie ...</div>
+    <wiwo-theme-wiwo theme-mode="dark">
+        <!-- Loading Screen -->
+        <div id="loading-screen">
+            <div class="loading-content">
+                <div class="logo">WiWo</div>
+                <div class="spinner"></div>
+                <div class="loading-text">Lade Galerie ...</div>
+            </div>
         </div>
-    </div>
 
-    <!-- Welcome Screen -->
-    <div id="welcome-screen" class="hidden">
-        <div class="welcome-content">
-            <h1 class="welcome-title">100 Jahre WirtschaftsWoche</h1>
-            <p class="welcome-text">Die WirtschaftsWoche feiert 100-jähriges Jubiläum.<br>Schauen Sie sich 100 Cover aus
-                unserer Geschichte an.</p>
-
-            <div class="instruction-container desktop-only">
-                <div class="icon-box">
-                    <!-- CSS/SVG Arrow Keys -->
-                    <svg width="100" height="60" viewBox="0 0 100 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="35" y="0" width="30" height="30" rx="4" stroke="#C5A059" stroke-width="2" />
-                        <path d="M50 10L50 20M50 10L45 15M50 10L55 15" stroke="#C5A059" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round" />
-
-                        <rect x="0" y="35" width="30" height="25" rx="4" stroke="#C5A059" stroke-width="2" />
-                        <path d="M15 47L5 47M5 47L10 42M5 47L10 52" stroke="#C5A059" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round" />
-
-                        <rect x="35" y="35" width="30" height="25" rx="4" stroke="#C5A059" stroke-width="2" />
-                        <path d="M50 42L50 52M50 52L45 47M50 52L55 47" stroke="#C5A059" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round" />
-
-                        <rect x="70" y="35" width="30" height="25" rx="4" stroke="#C5A059" stroke-width="2" />
-                        <path d="M85 47L95 47M95 47L90 42M95 47L90 52" stroke="#C5A059" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="hidden">
+            <div class="welcome-content">
+                <div style="margin-bottom: 30px;">
+                    <wiwo-logo-wiwo style="width: 200px; height: auto;"></wiwo-logo-wiwo>
                 </div>
-                <p class="instruction-text">Nutzen Sie die Pfeiltasten zur Navigation</p>
-            </div>
+                <wiwo-title size="small">100 Jahre WirtschaftsWoche</wiwo-title>
+                <wiwo-lead-text>Die WirtschaftsWoche feiert 100-jähriges Jubiläum.<br>Schauen Sie
+                    sich 100 Cover aus unserer Geschichte an.</wiwo-lead-text>
 
-            <div class="instruction-container mobile-only">
-                <div class="icon-box">
-                    <!-- CSS/SVG Joystick -->
-                    <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="30" cy="30" r="28" stroke="#C5A059" stroke-width="2" stroke-dasharray="4 4" />
-                        <circle cx="30" cy="30" r="12" fill="#C5A059" fill-opacity="0.2" stroke="#C5A059"
-                            stroke-width="2" />
-                        <circle cx="30" cy="30" r="4" fill="#C5A059" />
-                    </svg>
+                <div class="instruction-container desktop-only">
+                    <div class="icon-box">
+                        <!-- CSS/SVG Arrow Keys -->
+                        <svg width="100" height="60" viewBox="0 0 100 60" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <rect x="35" y="0" width="30" height="30" rx="4" stroke="#C5A059" stroke-width="2" />
+                            <path d="M50 10L50 20M50 10L45 15M50 10L55 15" stroke="#C5A059" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+
+                            <rect x="0" y="35" width="30" height="25" rx="4" stroke="#C5A059" stroke-width="2" />
+                            <path d="M15 47L5 47M5 47L10 42M5 47L10 52" stroke="#C5A059" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+
+                            <rect x="35" y="35" width="30" height="25" rx="4" stroke="#C5A059" stroke-width="2" />
+                            <path d="M50 42L50 52M50 52L45 47M50 52L55 47" stroke="#C5A059" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+
+                            <rect x="70" y="35" width="30" height="25" rx="4" stroke="#C5A059" stroke-width="2" />
+                            <path d="M85 47L95 47M95 47L90 42M95 47L90 52" stroke="#C5A059" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <wiwo-lead-text>Nutzen Sie die Pfeiltasten zur Navigation</wiwo-lead-text>
                 </div>
-                <p class="instruction-text">Nutzen Sie den Joystick zur Navigation</p>
-            </div>
 
-            <button id="start-btn" class="cta-button">Starten</button>
-        </div>
-    </div>
+                <div class="instruction-container mobile-only">
+                    <div class="icon-box">
+                        <!-- CSS/SVG Joystick -->
+                        <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="30" cy="30" r="28" stroke="#C5A059" stroke-width="2" stroke-dasharray="4 4" />
+                            <circle cx="30" cy="30" r="12" fill="#C5A059" fill-opacity="0.2" stroke="#C5A059"
+                                stroke-width="2" />
+                            <circle cx="30" cy="30" r="4" fill="#C5A059" />
+                        </svg>
+                    </div>
+                    <p class="instruction-text">Nutzen Sie den Joystick zur Navigation</p>
+                </div>
 
-    <!-- YouTube Video Screen -->
-    <iframe id="video-screen" width="1280" height="720" src="" frameborder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen
-        style="display:none"></iframe>
-    <button id="video-close-btn" class="hidden">&times;</button>
-
-    <div id="ui-layer">
-        <div id="info-panel">
-            <h1>WiWo Galerie</h1>
-            <p>Nutze die <strong>Pfeiltasten</strong> zum Bewegen.</p>
-            <p><strong>Enter</strong> für Aktionen, <strong>Esc</strong> für Mauszeiger.</p>
-        </div>
-
-        <div id="stats-panel">
-            <div class="stat-label">Betrachtete Titelseiten</div>
-            <div class="stat-value" id="completion-rate">0%</div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progress-fill"></div>
+                <wiwo-button id="start-btn" appearance="primary-brand">Starten</wiwo-button>
             </div>
         </div>
 
-        <div id="cover-overlay" class="hidden">
-            <div class="overlay-content">
-                <button id="close-btn">&times;</button>
-                <div id="overlay-image-container"></div>
-                <div id="overlay-info">
-                    <h2 id="overlay-title">Titelseite</h2>
-                    <p id="overlay-desc">Hier steht die Beschreibung zur Titelseite.</p>
+        <!-- YouTube Video Screen -->
+        <iframe id="video-screen" width="1280" height="720" src="" frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen style="display:none"></iframe>
+        <button id="video-close-btn" class="hidden">&times;</button>
+
+        <div id="ui-layer">
+            <div id="info-panel">
+                <wiwo-title size="small">WiWo Galerie</wiwo-title>
+                <wiwo-rich-text size="small">Nutze die <strong>Pfeiltasten</strong> zum
+                    Bewegen.</wiwo-rich-text>
+                <wiwo-rich-text size="small"><strong>Enter</strong> für Aktionen, <strong>Esc</strong> für
+                    Mauszeiger.</wiwo-rich-text>
+            </div>
+
+            <div id="stats-panel">
+                <wiwo-rich-text size="small" class="stat-label">Betrachtete Titelseiten</wiwo-rich-text>
+                <wiwo-title size="small" class="stat-value" id="completion-rate">0%</wiwo-title>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
                 </div>
             </div>
-        </div>
 
-        <div id="interaction-prompt" class="hidden">Ansehen</div>
+            <div id="cover-overlay" class="hidden">
+                <div class="overlay-content">
+                    <button id="close-btn" icon="close">&times;</button>
+                    <div id="overlay-image-container"></div>
+                    <div id="overlay-info">
+                        <wiwo-title id="overlay-title">Titelseite</wiwo-title>
+                        <wiwo-rich-text size="medium" id="overlay-desc">Hier steht die Beschreibung zur
+                            Titelseite.</wiwo-rich-text>
+                    </div>
+                </div>
+            </div>
 
-        <div id="mobile-controls">
-            <div id="joystick-zone" class="joystick-zone">
-                <div class="joystick-base">
-                    <div class="joystick-stick" id="joystick-stick"></div>
+            <button id="interaction-prompt" class="hidden">Ansehen</button>
+
+            <div id="mobile-controls">
+                <div id="joystick-zone" class="joystick-zone">
+                    <div class="joystick-base">
+                        <div class="joystick-stick" id="joystick-stick"></div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div id="canvas-container"></div>
+        <div id="canvas-container"></div>
 
-    <script src="covers-data.js"></script>
-    <script src="script.js"></script>
+        <script src="covers-data.js"></script>
+        <script src="script.js"></script>
+    </wiwo-theme-wiwo>
 </body>
 
 </html>
