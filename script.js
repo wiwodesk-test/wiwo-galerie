@@ -51,7 +51,11 @@ const state = {
         lightFound: false,
         firstFound: false,
         floorFound: false
-    }
+    },
+    // First success screen tracking
+    navigationStartTime: null,
+    hasNavigated: false,
+    firstSuccessShown: false
 };
 
 function unlockAchievement(id) {
@@ -719,12 +723,12 @@ function init() {
     }
 
     function setupLighting() {
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x888888, 0.5); // Moderate ambient for daylight
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x888888, 0.6); // Increased from 0.5
         hemiLight.position.set(0, 20, 0);
         hemiLight.name = 'mainHemi';
         scene.add(hemiLight);
 
-        const dirLight = new THREE.DirectionalLight(0xfff4e6, 0.8); // Warm sunlight, moderate brightness
+        const dirLight = new THREE.DirectionalLight(0xfff4e6, 1.0); // Increased from 0.8
         dirLight.position.set(10, 30, 10);
         dirLight.castShadow = true;
 
@@ -1745,8 +1749,9 @@ function init() {
             // Load custom image asynchronously
             const imagePath = highRes ? coverData.highRes : coverData.lowRes;
 
-            // Use managed loader for low-res covers (blocking), lazy loader for high-res (non-blocking)
-            const loader = highRes ? state.lazyTextureLoader : state.textureLoader;
+            // Use lazy loader for ALL covers to allow gallery to open immediately with placeholders
+            // This prevents the loading screen from waiting for all 100 covers
+            const loader = state.lazyTextureLoader;
 
             const loadTexture = () => {
                 loader.load(imagePath, (t) => {
@@ -2044,6 +2049,26 @@ function init() {
         // Using a lower multiplier for smoother mobile turning
         if (state.joystick.x < -0.6) rotChange = CONFIG.rotSpeed * 0.4;
         if (state.joystick.x > 0.6) rotChange = -CONFIG.rotSpeed * 0.4;
+
+        // Track navigation start time and show first success screen after 1.5 seconds
+        if ((moveStep !== 0 || rotChange !== 0) && !state.hasNavigated) {
+            if (state.navigationStartTime === null) {
+                state.navigationStartTime = performance.now();
+            } else if (!state.firstSuccessShown && (performance.now() - state.navigationStartTime) >= 1500) {
+                // Show first success screen after 1.5 seconds of navigation
+                const firstSuccessScreen = document.getElementById('first-success-screen');
+                if (firstSuccessScreen) {
+                    firstSuccessScreen.classList.remove('hidden');
+                    state.firstSuccessShown = true;
+                }
+            }
+        }
+
+        // Block all navigation while first success screen is shown
+        const firstSuccessScreen = document.getElementById('first-success-screen');
+        if (firstSuccessScreen && !firstSuccessScreen.classList.contains('hidden')) {
+            return; // Don't allow any movement until "Weiter" is clicked
+        }
 
         // If video is playing and user tries to move, close the video
         if (state.isVideoPlaying && (moveStep !== 0 || rotChange !== 0)) {
@@ -2390,4 +2415,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Add click handler for continue button (first success screen)
+    const continueBtn = document.getElementById('continue-btn');
+    if (continueBtn) {
+        continueBtn.addEventListener('click', () => {
+            const firstSuccessScreen = document.getElementById('first-success-screen');
+            if (firstSuccessScreen) {
+                firstSuccessScreen.classList.add('hidden');
+                state.hasNavigated = true; // Allow navigation to continue
+            }
+        });
+    }
+
+    // Add keydown handler for first success screen (close on any key except navigation)
+    document.addEventListener('keydown', (e) => {
+        const firstSuccessScreen = document.getElementById('first-success-screen');
+        if (firstSuccessScreen && !firstSuccessScreen.classList.contains('hidden')) {
+            const navKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'];
+            if (!navKeys.includes(e.key)) {
+                firstSuccessScreen.classList.add('hidden');
+                state.hasNavigated = true; // Allow navigation to continue
+            }
+        }
+    });
 });
