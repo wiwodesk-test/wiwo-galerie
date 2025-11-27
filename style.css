@@ -831,7 +831,9 @@ wiwo-logo-wiwo {
         font-size: 1rem;
     }
 }
-#first-success-screen {
+
+#first-success-screen,
+#achievement-screen {
     position: fixed;
     top: 0;
     left: 0;
@@ -845,7 +847,8 @@ wiwo-logo-wiwo {
     transition: opacity 0.8s ease, visibility 0.8s ease;
 }
 
-#first-success-screen.hidden {
+#first-success-screen.hidden,
+#achievement-screen.hidden {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
