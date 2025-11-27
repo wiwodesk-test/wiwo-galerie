@@ -21,6 +21,7 @@ const CONFIG = {
 
 const state = {
     viewedCovers: new Set(),
+    openedCovers: new Set(), // Track covers that have had overlay opened
     keys: { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, KeyW: false, KeyS: false, KeyA: false, KeyD: false },
     walls: [],
     obstacles: [],
@@ -50,7 +51,10 @@ const state = {
     achievements: {
         lightFound: false,
         firstFound: false,
-        floorFound: false
+        floorFound: false,
+        fiveCoversOpened: false,
+        treasureFound: false,
+        allCoversOpened: false
     },
     // First success screen tracking
     navigationStartTime: null,
@@ -76,11 +80,29 @@ function unlockAchievement(id) {
             title: 'Erstausgabe gefunden!',
             text: 'Gehe näher, um sie zu betrachten'
         },
+        fiveCoversOpened: {
+            elementId: 'achievement-five',
+            icon: '🎯',
+            title: '5 Titelseiten betrachtet!',
+            text: 'Du hast bereits 5 Cover genauer angesehen'
+        },
         floorFound: {
             elementId: 'achievement-floor',
             icon: '🏛️',
             title: '1. Etage erreicht!',
             text: 'Jetzt schaue dir das Video an'
+        },
+        treasureFound: {
+            elementId: 'achievement-treasure',
+            icon: '🎁',
+            title: 'Schatztruhe gefunden!',
+            text: ''
+        },
+        allCoversOpened: {
+            elementId: 'achievement-all',
+            icon: '🏆',
+            title: 'Alle Titelseiten betrachtet!',
+            text: 'Du hast alle 100 Cover angesehen'
         }
     }[id];
 
@@ -94,25 +116,56 @@ function unlockAchievement(id) {
         if (check) check.innerText = '☑';
     }
 
-    // Show notification toast
-    showAchievementNotification(achievementData.icon, achievementData.title, achievementData.text);
-}
-
-function showAchievementNotification(icon, title, text) {
-    const achievementScreen = document.getElementById('achievement-screen');
-    if (achievementScreen) {
-        // Update content
-        const iconEl = document.getElementById('achievement-icon');
-        const titleEl = document.getElementById('achievement-title');
-        const textEl = document.getElementById('achievement-text');
-
-        if (iconEl) iconEl.textContent = icon;
-        if (titleEl) titleEl.textContent = title;
-        if (textEl) textEl.innerHTML = text;
-
-        // Show screen
-        achievementScreen.classList.remove('hidden');
+    // Special handling for achievements with custom screens
+    if (id === 'lightFound') {
+        const lightScreen = document.getElementById('light-success-screen');
+        if (lightScreen) {
+            lightScreen.classList.remove('hidden');
+        }
+        return;
     }
+
+    if (id === 'fiveCoversOpened') {
+        const fiveCoversScreen = document.getElementById('five-covers-screen');
+        if (fiveCoversScreen) {
+            fiveCoversScreen.classList.remove('hidden');
+        }
+        return;
+    }
+
+    if (id === 'floorFound') {
+        const floorScreen = document.getElementById('floor-success-screen');
+        if (floorScreen) {
+            floorScreen.classList.remove('hidden');
+        }
+        return;
+    }
+
+    if (id === 'treasureFound') {
+        // Handled by checkInteraction showing #treasure-screen
+        return;
+    }
+
+    if (id === 'allCoversOpened') {
+        // Show final screen
+        const finalScreen = document.getElementById('final-screen');
+        if (finalScreen) {
+            finalScreen.classList.remove('hidden');
+        }
+        return;
+    }
+
+    if (id === 'firstFound') {
+        // Show achievement screen for first cover
+        const achievementScreen = document.getElementById('achievement-screen');
+        if (achievementScreen) {
+            achievementScreen.classList.remove('hidden');
+        }
+        return;
+    }
+
+    // Show notification toast for others (if any)
+    showAchievementNotification(achievementData.icon, achievementData.title, achievementData.text);
 }
 
 // Setup loading manager callbacks (Optional now, but kept for debug)
@@ -482,9 +535,11 @@ function init() {
 
     // Make interaction prompt clickable
     document.getElementById('interaction-prompt').addEventListener('click', () => {
+        console.log('🖱️ Interaction prompt clicked');
         checkInteraction();
     });
     document.getElementById('interaction-prompt').addEventListener('touchstart', (e) => {
+        console.log('📱 Interaction prompt touched');
         e.preventDefault();
         checkInteraction();
     });
@@ -1448,6 +1503,123 @@ function init() {
         scene.add(swHousing);
         state.interactables.push(swHousing);
 
+        // Treasure Chest (Loot Box) in corner of Room 1 Upper Floor
+        function createTreasureChest(x, y, z) {
+            const group = new THREE.Group();
+
+            // Materials - Enhanced
+            const woodMat = new THREE.MeshStandardMaterial({
+                color: 0x6B3410,
+                roughness: 0.6,
+                metalness: 0.2
+            });
+
+            const goldMat = new THREE.MeshStandardMaterial({
+                color: 0xC5A059,
+                roughness: 0.2,
+                metalness: 0.95,
+                emissive: 0x4A2F1A,
+                emissiveIntensity: 0.1
+            });
+
+            const lockMat = new THREE.MeshStandardMaterial({
+                color: 0xFFD700,
+                roughness: 0.1,
+                metalness: 1.0,
+                emissive: 0xFFD700,
+                emissiveIntensity: 0.2
+            });
+
+            const gemMat = new THREE.MeshStandardMaterial({
+                color: 0xFF0000,
+                roughness: 0.1,
+                metalness: 0.5,
+                emissive: 0x880000,
+                emissiveIntensity: 0.3
+            });
+
+            // Main chest body (bottom)
+            const bodyGeo = new THREE.BoxGeometry(0.6, 0.4, 0.4);
+            const body = new THREE.Mesh(bodyGeo, woodMat);
+            body.position.y = 0.2;
+            body.castShadow = true;
+            body.receiveShadow = true;
+            group.add(body);
+
+            // Chest lid (top) - slightly curved
+            const lidGeo = new THREE.BoxGeometry(0.62, 0.25, 0.42);
+            const lid = new THREE.Mesh(lidGeo, woodMat);
+            lid.position.y = 0.525;
+            lid.castShadow = true;
+            lid.receiveShadow = true;
+            group.add(lid);
+
+            // Gold bands (decorative)
+            const bandGeo = new THREE.BoxGeometry(0.65, 0.04, 0.44);
+            const band1 = new THREE.Mesh(bandGeo, goldMat);
+            band1.position.y = 0.15;
+            group.add(band1);
+
+            const band2 = new THREE.Mesh(bandGeo, goldMat);
+            band2.position.y = 0.4;
+            group.add(band2);
+
+            const band3 = new THREE.Mesh(bandGeo, goldMat);
+            band3.position.y = 0.65;
+            group.add(band3);
+
+            // Corner reinforcements (fancy detail)
+            const cornerGeo = new THREE.BoxGeometry(0.06, 0.7, 0.06);
+            const corners = [
+                [-0.3, 0.35, -0.2],
+                [0.3, 0.35, -0.2],
+                [-0.3, 0.35, 0.2],
+                [0.3, 0.35, 0.2]
+            ];
+            corners.forEach(pos => {
+                const corner = new THREE.Mesh(cornerGeo, goldMat);
+                corner.position.set(...pos);
+                group.add(corner);
+            });
+
+            // Lock (front center) - larger and fancier
+            const lockGeo = new THREE.BoxGeometry(0.12, 0.18, 0.06);
+            const lock = new THREE.Mesh(lockGeo, lockMat);
+            lock.position.set(0, 0.3, 0.225);
+            group.add(lock);
+
+            // Keyhole (decorative circle)
+            const keyholeGeo = new THREE.CircleGeometry(0.025, 16);
+            const keyhole = new THREE.Mesh(keyholeGeo, new THREE.MeshStandardMaterial({ color: 0x000000 }));
+            keyhole.position.set(0, 0.3, 0.26);
+            group.add(keyhole);
+
+            // Decorative gems on lid
+            const gemGeo = new THREE.SphereGeometry(0.03, 16, 16);
+            const gemPositions = [
+                [-0.15, 0.65, 0],
+                [0.15, 0.65, 0],
+                [0, 0.65, -0.12],
+                [0, 0.65, 0.12]
+            ];
+            gemPositions.forEach(pos => {
+                const gem = new THREE.Mesh(gemGeo, gemMat);
+                gem.position.set(...pos);
+                group.add(gem);
+            });
+
+            // Position the chest on the floor
+            group.position.set(x, y, z);
+            group.scale.set(2, 2, 2); // Make it bigger
+            group.userData = { type: 'treasure' };
+
+            scene.add(group);
+            state.interactables.push(group);
+        }
+
+        // Place treasure chest in northwest corner of Room 1 upper floor - ON THE FLOOR
+        createTreasureChest(-9, 5.0, 1);
+
         addObstacles();
         placeCovers();
     }
@@ -1909,6 +2081,29 @@ function init() {
         }
 
         const coverIndex = cover.userData.id;
+
+        // Track that this cover has been opened
+        if (!state.openedCovers.has(coverIndex)) {
+            state.openedCovers.add(coverIndex);
+
+            // Update progress bar based on opened covers
+            const pct = Math.floor((state.openedCovers.size / CONFIG.totalCovers) * 100);
+            document.getElementById('completion-rate').innerText = `${pct}%`;
+            document.getElementById('progress-fill').style.width = `${pct}%`;
+
+            // Check for 5 covers achievement
+            if (state.openedCovers.size === 5) {
+                // Will show achievement when overlay closes
+                state.pendingAchievement = 'fiveCoversOpened';
+            }
+
+            // Check for all covers achievement
+            if (state.openedCovers.size === CONFIG.totalCovers) {
+                // Will show achievement when overlay closes
+                state.pendingAchievement = 'allCoversOpened';
+            }
+        }
+
         const coverData = typeof COVERS_DATA !== 'undefined' && COVERS_DATA[coverIndex];
 
         // Use custom data if available, otherwise use defaults
@@ -1989,6 +2184,16 @@ function init() {
 
         if (!isIOS && document.body.requestPointerLock) {
             document.body.requestPointerLock();
+        }
+
+        // Trigger pending achievement after overlay closes
+        if (state.pendingAchievement) {
+            const achievementId = state.pendingAchievement;
+            state.pendingAchievement = null;
+            // Small delay to ensure overlay is fully closed
+            setTimeout(() => {
+                unlockAchievement(achievementId);
+            }, 100);
         }
         // console.log('closeOverlay complete, state.isOverlayOpen:', state.isOverlayOpen);
     }
@@ -2154,7 +2359,7 @@ function init() {
                     }
                 }
 
-                // Mark as viewed if seen (separate from auto-open)
+                // Mark as viewed if seen (separate from auto-open) - only for visual feedback
                 if (!cover.userData.viewed && dist < 8 && frustum.containsPoint(worldPos)) {
                     const raycaster = new THREE.Raycaster();
                     const dir = worldPos.clone().sub(camera.position).normalize();
@@ -2163,8 +2368,10 @@ function init() {
                     if (intersects.length > 0) {
                         const firstHit = intersects[0];
                         if (firstHit.object === cover || firstHit.distance >= dist - 0.5) {
-                            // Only add subtle glow when seen, but don't count progress yet
-                            cover.material.emissive.setHex(0x050505);
+                            cover.userData.viewed = true;
+                            state.viewedCovers.add(cover.userData.id);
+                            // Visual feedback only - no progress bar update
+                            cover.material.emissive.setHex(0x050505); // Subtle glow
                         }
                     }
                 }
@@ -2206,6 +2413,7 @@ function init() {
     function findClosestInteractable() {
         let closest = null;
         let minDist = CONFIG.interactionDist;
+        const raycaster = new THREE.Raycaster();
 
         state.covers.forEach(cover => {
             const worldPos = new THREE.Vector3();
@@ -2217,8 +2425,28 @@ function init() {
                 const toCover = worldPos.clone().sub(camera.position).normalize();
                 const dot = dir.dot(toCover);
                 if (dot > 0.8) {
-                    closest = cover;
-                    minDist = dist;
+                    // Raycast to check if there's a wall between camera and cover
+                    raycaster.set(camera.position, toCover);
+                    const intersects = raycaster.intersectObjects(scene.children, true);
+
+                    // Check if the first intersection is the cover itself (not a wall)
+                    let blocked = false;
+                    for (const intersect of intersects) {
+                        if (intersect.object === cover) {
+                            // Found the cover first, not blocked
+                            break;
+                        }
+                        // Check if this is a wall (not a cover and closer than the target)
+                        if (intersect.distance < dist && !state.covers.includes(intersect.object)) {
+                            blocked = true;
+                            break;
+                        }
+                    }
+
+                    if (!blocked) {
+                        closest = cover;
+                        minDist = dist;
+                    }
                 }
             }
         });
@@ -2231,8 +2459,37 @@ function init() {
                 const toObj = obj.position.clone().sub(camera.position).normalize();
                 const dot = dir.dot(toObj);
                 if (dot > 0.8) {
-                    closest = obj;
-                    minDist = dist;
+                    // Raycast check for interactables too
+                    raycaster.set(camera.position, toObj);
+                    const intersects = raycaster.intersectObjects(scene.children, true);
+
+                    let blocked = false;
+                    for (const intersect of intersects) {
+                        // Check if the intersected object is the target or a child of the target
+                        let isTarget = false;
+                        let current = intersect.object;
+                        while (current) {
+                            if (current === obj) {
+                                isTarget = true;
+                                break;
+                            }
+                            current = current.parent;
+                        }
+
+                        if (isTarget) {
+                            break; // We hit the target, so it's not blocked
+                        }
+
+                        if (intersect.distance < dist) {
+                            blocked = true;
+                            break;
+                        }
+                    }
+
+                    if (!blocked) {
+                        closest = obj;
+                        minDist = dist;
+                    }
                 }
             }
         });
@@ -2256,11 +2513,26 @@ function init() {
         // console.log('🎯 checkInteraction - closest object:', closest?.userData, 'type:', closest?.userData?.type);
 
         if (closest) {
+            console.log('🎯 checkInteraction processing:', closest.userData.type);
             if (closest.userData.type === 'switch') {
                 toggleLights();
+            } else if (closest.userData.type === 'treasure') {
+                console.log('💎 Treasure interaction triggered');
+                // Handle treasure chest
+                try {
+                    unlockAchievement('treasureFound');
+                    console.log('🏆 Achievement unlocked');
+                } catch (e) {
+                    console.error('❌ Error unlocking achievement:', e);
+                }
+
+                // Release pointer lock
+                if (!isIOS && document.exitPointerLock) {
+                    document.exitPointerLock();
+                }
             } else if (closest.userData.type === 'remote' || closest.userData.type === 'podcast' || closest.userData.videoId || closest.userData.podcastId) {
                 // Handle remote, podcast headphones, or covers with video/podcast
-                const videoId = closest.userData.videoId;
+                const videoId = closest.userData.videoId || closest.userData.podcastId;
 
                 if (state.isVideoPlaying) {
                     // Stop video/podcast
@@ -2321,6 +2593,8 @@ function init() {
                 prompt.innerText = 'Licht ändern';
                 // Unlock achievement when player first finds the light switch
                 unlockAchievement('lightFound');
+            } else if (closest.userData.type === 'treasure') {
+                prompt.innerText = 'Öffnen';
             } else if (closest.userData.type === 'remote') {
                 prompt.innerText = state.isVideoPlaying ? 'Video stoppen' : 'Video abspielen';
             } else if (closest.userData.type === 'podcast') {
@@ -2340,6 +2614,14 @@ function init() {
             }
             // console.log('✅ Showing prompt:', prompt.innerText, 'for object:', closest.userData);
             prompt.classList.remove('hidden');
+
+            // Auto-open treasure chest if very close
+            if (closest.userData.type === 'treasure') {
+                const dist = camera.position.distanceTo(closest.position);
+                if (dist < 2.0 && !state.isOverlayOpen) {
+                    checkInteraction();
+                }
+            }
         } else {
             prompt.classList.add('hidden');
         }
@@ -2423,6 +2705,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const firstSuccessScreen = document.getElementById('first-success-screen');
             if (firstSuccessScreen) {
                 firstSuccessScreen.classList.add('hidden');
+                state.isOverlayOpen = false;
                 state.hasNavigated = true; // Allow navigation to continue
             }
         });
@@ -2435,6 +2718,79 @@ document.addEventListener('DOMContentLoaded', () => {
             const achievementScreen = document.getElementById('achievement-screen');
             if (achievementScreen) {
                 achievementScreen.classList.add('hidden');
+                state.isOverlayOpen = false;
+                state.lastAchievementClosed = performance.now();
+            }
+        });
+    }
+
+    // Add click handler for treasure continue button
+    const treasureContinueBtn = document.getElementById('treasure-continue-btn');
+    if (treasureContinueBtn) {
+        treasureContinueBtn.addEventListener('click', () => {
+            const treasureScreen = document.getElementById('treasure-screen');
+            if (treasureScreen) {
+                treasureScreen.classList.add('hidden');
+                // Reset inline styles
+                treasureScreen.style.display = '';
+                treasureScreen.style.opacity = '';
+                treasureScreen.style.visibility = '';
+                treasureScreen.style.zIndex = '';
+
+                state.isOverlayOpen = false;
+                state.lastAchievementClosed = performance.now();
+            }
+        });
+    }
+
+    // Add click handler for final screen continue button
+    const finalContinueBtn = document.getElementById('final-continue-btn');
+    if (finalContinueBtn) {
+        finalContinueBtn.addEventListener('click', () => {
+            const finalScreen = document.getElementById('final-screen');
+            if (finalScreen) {
+                finalScreen.classList.add('hidden');
+                state.isOverlayOpen = false;
+                state.lastAchievementClosed = performance.now();
+            }
+        });
+    }
+
+    // Add click handler for light success screen
+    const lightContinueBtn = document.getElementById('light-continue-btn');
+    if (lightContinueBtn) {
+        lightContinueBtn.addEventListener('click', () => {
+            const screen = document.getElementById('light-success-screen');
+            if (screen) {
+                screen.classList.add('hidden');
+                state.isOverlayOpen = false;
+                state.lastAchievementClosed = performance.now();
+            }
+        });
+    }
+
+    // Add click handler for five covers success screen
+    const fiveContinueBtn = document.getElementById('five-covers-continue-btn');
+    if (fiveContinueBtn) {
+        fiveContinueBtn.addEventListener('click', () => {
+            const screen = document.getElementById('five-covers-screen');
+            if (screen) {
+                screen.classList.add('hidden');
+                state.isOverlayOpen = false;
+                state.lastAchievementClosed = performance.now();
+            }
+        });
+    }
+
+    // Add click handler for floor success screen
+    const floorContinueBtn = document.getElementById('floor-continue-btn');
+    if (floorContinueBtn) {
+        floorContinueBtn.addEventListener('click', () => {
+            const screen = document.getElementById('floor-success-screen');
+            if (screen) {
+                screen.classList.add('hidden');
+                state.isOverlayOpen = false;
+                state.lastAchievementClosed = performance.now();
             }
         });
     }
@@ -2444,19 +2800,86 @@ document.addEventListener('DOMContentLoaded', () => {
         const navKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'];
         if (navKeys.includes(e.key)) return;
 
-        const firstSuccessScreen = document.getElementById('first-success-screen');
-        if (firstSuccessScreen && !firstSuccessScreen.classList.contains('hidden')) {
-            firstSuccessScreen.classList.add('hidden');
-            state.hasNavigated = true; // Allow navigation to continue
-            return;
-        }
+        const screens = [
+            'first-success-screen',
+            'achievement-screen',
+            'treasure-screen',
+            'final-screen',
+            'light-success-screen',
+            'five-covers-screen',
+            'floor-success-screen'
+        ];
 
-        const achievementScreen = document.getElementById('achievement-screen');
-        if (achievementScreen && !achievementScreen.classList.contains('hidden')) {
-            achievementScreen.classList.add('hidden');
-            // Set a timestamp to block interactions briefly
-            state.lastAchievementClosed = performance.now();
-            return;
+        for (const id of screens) {
+            const screen = document.getElementById(id);
+            if (screen && !screen.classList.contains('hidden')) {
+                screen.classList.add('hidden');
+                // Reset inline styles
+                screen.style.display = '';
+                screen.style.opacity = '';
+                screen.style.visibility = '';
+                screen.style.zIndex = '';
+
+                state.isOverlayOpen = false; // Reset overlay state
+                state.lastAchievementClosed = performance.now();
+                if (id === 'first-success-screen') {
+                    state.hasNavigated = true;
+                }
+                return;
+            }
         }
     });
+
+    // Debug: Add global functions to test success screens
+    window.testSuccessScreen = function (screenName) {
+        const screens = {
+            'welcome': 'welcome-screen',
+            'first': 'first-success-screen',
+            'achievement': 'achievement-screen',
+            'light': 'light-success-screen',
+            'five': 'five-covers-screen',
+            'floor': 'floor-success-screen',
+            'treasure': 'treasure-screen',
+            'final': 'final-screen'
+        };
+
+        const screenId = screens[screenName];
+        if (screenId) {
+            const screen = document.getElementById(screenId);
+            if (screen) {
+                screen.classList.remove('hidden');
+                console.log(`✅ Showing ${screenName} screen (${screenId})`);
+            } else {
+                console.error(`❌ Screen not found: ${screenId}`);
+            }
+        } else {
+            console.log('Available screens:', Object.keys(screens).join(', '));
+        }
+    };
+
+    window.hideAllScreens = function () {
+        const screenIds = [
+            'welcome-screen',
+            'first-success-screen',
+            'achievement-screen',
+            'light-success-screen',
+            'five-covers-screen',
+            'floor-success-screen',
+            'treasure-screen',
+            'final-screen'
+        ];
+
+        screenIds.forEach(id => {
+            const screen = document.getElementById(id);
+            if (screen) {
+                screen.classList.add('hidden');
+            }
+        });
+        console.log('✅ All screens hidden');
+    };
+
+    console.log('🎮 Debug commands available:');
+    console.log('  testSuccessScreen("screenName") - Show a success screen');
+    console.log('  hideAllScreens() - Hide all screens');
+    console.log('  Available screens: welcome, first, achievement, light, five, floor, treasure, final');
 });
