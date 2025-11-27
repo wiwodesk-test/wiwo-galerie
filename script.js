@@ -15,7 +15,7 @@ const CONFIG = {
     eyeHeight: 1.7,
     totalCovers: 100,
     interactionDist: 3.0,
-    lightsOn: true
+    lightsOn: false // Default to Normal (Warm) mode
 };
 
 
@@ -55,7 +55,8 @@ const state = {
     // First success screen tracking
     navigationStartTime: null,
     hasNavigated: false,
-    firstSuccessShown: false
+    firstSuccessShown: false,
+    lastAchievementClosed: 0 // Timestamp to prevent immediate interaction after closing achievement
 };
 
 function unlockAchievement(id) {
@@ -98,32 +99,20 @@ function unlockAchievement(id) {
 }
 
 function showAchievementNotification(icon, title, text) {
-    // Create notification element if it doesn't exist
-    let notification = document.getElementById('achievement-notification');
-    if (!notification) {
-        notification = document.createElement('div');
-        notification.id = 'achievement-notification';
-        notification.className = 'achievement-notification';
-        notification.innerHTML = `
-            <div class="achievement-notification-icon"></div>
-            <div class="achievement-notification-title"></div>
-            <div class="achievement-notification-text"></div>
-        `;
-        document.body.appendChild(notification);
+    const achievementScreen = document.getElementById('achievement-screen');
+    if (achievementScreen) {
+        // Update content
+        const iconEl = document.getElementById('achievement-icon');
+        const titleEl = document.getElementById('achievement-title');
+        const textEl = document.getElementById('achievement-text');
+
+        if (iconEl) iconEl.textContent = icon;
+        if (titleEl) titleEl.textContent = title;
+        if (textEl) textEl.innerHTML = text;
+
+        // Show screen
+        achievementScreen.classList.remove('hidden');
     }
-
-    // Update content
-    notification.querySelector('.achievement-notification-icon').textContent = icon;
-    notification.querySelector('.achievement-notification-title').textContent = title;
-    notification.querySelector('.achievement-notification-text').textContent = text;
-
-    // Show notification
-    notification.classList.add('show');
-
-    // Hide after 3 seconds
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 3000);
 }
 
 // Setup loading manager callbacks (Optional now, but kept for debug)
@@ -678,6 +667,14 @@ function init() {
     }
 
     function onKeyDown(e) {
+        // Block all input when achievement or success screens are visible
+        const firstSuccessScreen = document.getElementById('first-success-screen');
+        const achievementScreen = document.getElementById('achievement-screen');
+        if ((firstSuccessScreen && !firstSuccessScreen.classList.contains('hidden')) ||
+            (achievementScreen && !achievementScreen.classList.contains('hidden'))) {
+            return; // Let the DOMContentLoaded listener handle these screens
+        }
+
         // Video controls take priority
         if (state.isVideoPlaying) {
             if (['Escape', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyS', 'KeyA', 'KeyD'].includes(e.code)) {
@@ -723,12 +720,13 @@ function init() {
     }
 
     function setupLighting() {
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x888888, 0.6); // Increased from 0.5
+        // Initialize with NORMAL MODE (Warm/Cozy) values
+        const hemiLight = new THREE.HemisphereLight(0xfff0e0, 0x444444, 0.5);
         hemiLight.position.set(0, 20, 0);
         hemiLight.name = 'mainHemi';
         scene.add(hemiLight);
 
-        const dirLight = new THREE.DirectionalLight(0xfff4e6, 1.0); // Increased from 0.8
+        const dirLight = new THREE.DirectionalLight(0xffdcb4, 0.8);
         dirLight.position.set(10, 30, 10);
         dirLight.castShadow = true;
 
@@ -770,9 +768,8 @@ function init() {
 
     function toggleLights() {
         CONFIG.lightsOn = !CONFIG.lightsOn;
-        unlockAchievement('lightFound');
 
-        // Toggle between Warm (Default) and Cool/Bright modes
+        // Toggle between Normal (Warm) and Bright (Cooler) modes
         scene.traverse((obj) => {
             if (obj.isLight) {
                 if (obj.name === 'mainHemi') {
@@ -2064,9 +2061,11 @@ function init() {
             }
         }
 
-        // Block all navigation while first success screen is shown
+        // Block all navigation while first success screen or achievement screen is shown
         const firstSuccessScreen = document.getElementById('first-success-screen');
-        if (firstSuccessScreen && !firstSuccessScreen.classList.contains('hidden')) {
+        const achievementScreen = document.getElementById('achievement-screen');
+        if ((firstSuccessScreen && !firstSuccessScreen.classList.contains('hidden')) ||
+            (achievementScreen && !achievementScreen.classList.contains('hidden'))) {
             return; // Don't allow any movement until "Weiter" is clicked
         }
 
@@ -2164,18 +2163,8 @@ function init() {
                     if (intersects.length > 0) {
                         const firstHit = intersects[0];
                         if (firstHit.object === cover || firstHit.distance >= dist - 0.5) {
-                            cover.userData.viewed = true;
-                            state.viewedCovers.add(cover.userData.id);
-
-                            // Check for First Issue (Cover 0)
-                            if (cover.userData.id === 0) {
-                                unlockAchievement('firstFound');
-                            }
-
-                            cover.material.emissive.setHex(0x050505); // Subtle glow
-                            const pct = Math.floor((state.viewedCovers.size / CONFIG.totalCovers) * 100);
-                            document.getElementById('completion-rate').innerText = `${pct}%`;
-                            document.getElementById('progress-fill').style.width = `${pct}%`;
+                            // Only add subtle glow when seen, but don't count progress yet
+                            cover.material.emissive.setHex(0x050505);
                         }
                     }
                 }
@@ -2255,6 +2244,11 @@ function init() {
         // console.log('🔍 checkInteraction called. isOverlayOpen:', state.isOverlayOpen, 'closestInteractable:', state.closestInteractable?.userData);
         if (state.isOverlayOpen) return;
 
+        // Prevent interaction if achievement was just closed (within 200ms)
+        if (state.lastAchievementClosed && (performance.now() - state.lastAchievementClosed) < 200) {
+            return;
+        }
+
         // Use the cached interactable that triggered the prompt
         // This ensures WYSIWYG: If the prompt is visible, the action works.
         // We fallback to findClosestInteractable() only if cache is missing (shouldn't happen if prompt is visible)
@@ -2325,6 +2319,8 @@ function init() {
         if (closest) {
             if (closest.userData.type === 'switch') {
                 prompt.innerText = 'Licht ändern';
+                // Unlock achievement when player first finds the light switch
+                unlockAchievement('lightFound');
             } else if (closest.userData.type === 'remote') {
                 prompt.innerText = state.isVideoPlaying ? 'Video stoppen' : 'Video abspielen';
             } else if (closest.userData.type === 'podcast') {
@@ -2337,6 +2333,10 @@ function init() {
                 prompt.innerText = state.isVideoPlaying ? 'Podcast stoppen' : 'Podcast anhören';
             } else {
                 prompt.innerText = 'Ansehen';
+                // Unlock achievement when player first sees cover 1 (id 0)
+                if (closest.userData.id === 0) {
+                    unlockAchievement('firstFound');
+                }
             }
             // console.log('✅ Showing prompt:', prompt.innerText, 'for object:', closest.userData);
             prompt.classList.remove('hidden');
@@ -2428,15 +2428,35 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Add keydown handler for first success screen (close on any key except navigation)
+    // Add click handler for achievement continue button
+    const achievementContinueBtn = document.getElementById('achievement-continue-btn');
+    if (achievementContinueBtn) {
+        achievementContinueBtn.addEventListener('click', () => {
+            const achievementScreen = document.getElementById('achievement-screen');
+            if (achievementScreen) {
+                achievementScreen.classList.add('hidden');
+            }
+        });
+    }
+
+    // Add keydown handler for screens (close on any key except navigation)
     document.addEventListener('keydown', (e) => {
+        const navKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'];
+        if (navKeys.includes(e.key)) return;
+
         const firstSuccessScreen = document.getElementById('first-success-screen');
         if (firstSuccessScreen && !firstSuccessScreen.classList.contains('hidden')) {
-            const navKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'];
-            if (!navKeys.includes(e.key)) {
-                firstSuccessScreen.classList.add('hidden');
-                state.hasNavigated = true; // Allow navigation to continue
-            }
+            firstSuccessScreen.classList.add('hidden');
+            state.hasNavigated = true; // Allow navigation to continue
+            return;
+        }
+
+        const achievementScreen = document.getElementById('achievement-screen');
+        if (achievementScreen && !achievementScreen.classList.contains('hidden')) {
+            achievementScreen.classList.add('hidden');
+            // Set a timestamp to block interactions briefly
+            state.lastAchievementClosed = performance.now();
+            return;
         }
     });
 });
