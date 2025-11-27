@@ -410,29 +410,13 @@ canvas {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 15px rgba(197, 160, 89, 0.4);
-    transition: transform 0.1s;
-}
-
-#welcome-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9990;
-    transition: opacity 0.8s ease, visibility 0.8s ease;
-}
-
-#welcome-screen.hidden {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
+    padding: 40px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(197, 160, 89, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 
 .welcome-content {
@@ -563,55 +547,6 @@ wiwo-logo-wiwo {
         height: auto;
         max-height: 90vh;
         border: 1px solid #333;
-        background: #050505;
-        display: block;
-        overflow-y: auto;
-    }
-
-    #overlay-image-container {
-        width: 100%;
-        height: auto;
-        max-height: 50vh;
-        margin-top: 20px;
-        background: transparent;
-        border: none;
-    }
-
-    #overlay-image-container canvas,
-    #overlay-image-container img {
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
-    }
-
-    #overlay-info {
-        width: 100%;
-        padding: 10px 0;
-    }
-
-    #overlay-title {
-        margin-bottom: 15px;
-    }
-
-    #overlay-desc {
-        font-size: 0.95rem;
-    }
-
-    #close-btn {
-        top: 15px;
-        right: 15px;
-        color: #fff;
-        background: rgba(255, 255, 255, 0.1);
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 24px;
-    }
-
-    #stats-panel {
-        position: fixed;
-        top: 15px;
         left: 50%;
         transform: translateX(-50%);
         align-self: unset;
@@ -670,7 +605,7 @@ wiwo-logo-wiwo {
     margin-top: 15px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 2px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 15px;
 }
@@ -830,10 +765,45 @@ wiwo-logo-wiwo {
     .achievement-notification-text {
         font-size: 1rem;
     }
+
+    #stats-panel .progress-bar {
+        display: none;
+    }
+
+    .welcome-title {
+        font-size: 2rem;
+    }
+
+    .mobile-only {
+        display: flex;
+    }
+
+    .desktop-only {
+        display: none;
+    }
+
+    .welcome-content {
+        padding: 20px;
+        width: 90%;
+    }
+
+    .welcome-content wiwo-headline {
+        font-size: 2rem;
+    }
+
+    .welcome-content wiwo-lead-text {
+        font-size: 1rem;
+    }
 }
 
+#welcome-screen,
 #first-success-screen,
-#achievement-screen {
+#achievement-screen,
+#light-success-screen,
+#five-covers-screen,
+#floor-success-screen,
+#treasure-screen,
+#final-screen {
     position: fixed;
     top: 0;
     left: 0;
@@ -847,9 +817,77 @@ wiwo-logo-wiwo {
     transition: opacity 0.8s ease, visibility 0.8s ease;
 }
 
+#welcome-screen.hidden,
 #first-success-screen.hidden,
-#achievement-screen.hidden {
+#achievement-screen.hidden,
+#light-success-screen.hidden,
+#five-covers-screen.hidden,
+#floor-success-screen.hidden,
+#treasure-screen.hidden,
+#final-screen.hidden {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+}
+
+/* Treasure Screen Buttons */
+.treasure-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+/* Mobile Overlay & Treasure Buttons */
+@media (max-width: 768px) {
+    .treasure-buttons {
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+    }
+
+    .treasure-buttons wiwo-button {
+        width: 100%;
+    }
+
+    /* Mobile Overlay Improvements */
+    #cover-overlay .overlay-content {
+        flex-direction: column;
+        padding: 20px;
+        gap: 20px;
+        width: 95vw;
+        height: auto;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    #overlay-image-container {
+        width: 100%;
+        height: auto;
+        max-height: 40vh;
+        /* Reduced height */
+        margin-top: 40px;
+        /* Space for close button */
+        flex-shrink: 0;
+    }
+
+    #overlay-info {
+        width: 100%;
+        padding: 15px 5px;
+        overflow-y: auto;
+        flex-grow: 1;
+        max-height: calc(50vh - 60px);
+    }
+
+    #close-btn {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 10001;
+        background: rgba(0, 0, 0, 0.6);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        width: 44px;
+        height: 44px;
+    }
 }
