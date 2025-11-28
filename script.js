@@ -2453,12 +2453,16 @@ function init() {
 
         state.interactables.forEach(obj => {
             const dist = obj.position.distanceTo(camera.position);
-            if (dist < minDist) {
+            // Larger interaction distance for treasure chest
+            const maxDist = obj.userData.type === 'treasure' ? 4.5 : minDist;
+            if (dist < maxDist) {
                 const dir = new THREE.Vector3();
                 camera.getWorldDirection(dir);
                 const toObj = obj.position.clone().sub(camera.position).normalize();
                 const dot = dir.dot(toObj);
-                if (dot > 0.8) {
+                // More forgiving angle for treasure chest (0.6 instead of 0.8)
+                const angleThreshold = obj.userData.type === 'treasure' ? 0.6 : 0.8;
+                if (dot > angleThreshold) {
                     // Raycast check for interactables too
                     raycaster.set(camera.position, toObj);
                     const intersects = raycaster.intersectObjects(scene.children, true);
@@ -2524,6 +2528,27 @@ function init() {
                     console.log('🏆 Achievement unlocked');
                 } catch (e) {
                     console.error('❌ Error unlocking achievement:', e);
+                }
+
+                // Show treasure success screen
+                const treasureScreen = document.getElementById('treasure-screen');
+                if (treasureScreen) {
+                    if (treasureScreen.innerHTML.trim() === '') {
+                        treasureScreen.innerHTML = '<div style="color:white; font-size:20px; padding:20px;">Error: Screen content missing. Reload page.</div>';
+                    }
+                    treasureScreen.classList.remove('hidden');
+                    treasureScreen.classList.add('force-visible');
+                    state.isOverlayOpen = true;
+
+                    // Double check visibility
+                    setTimeout(() => {
+                        const style = window.getComputedStyle(treasureScreen);
+                        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                            alert('Schatztruhe geöffnet! (Screen rendering failed)');
+                        }
+                    }, 100);
+                } else {
+                    alert('Schatztruhe geöffnet! (Screen element missing)');
                 }
 
                 // Release pointer lock
@@ -2618,7 +2643,9 @@ function init() {
             // Auto-open treasure chest if very close
             if (closest.userData.type === 'treasure') {
                 const dist = camera.position.distanceTo(closest.position);
-                if (dist < 2.0 && !state.isOverlayOpen) {
+                console.log('💎 Treasure distance:', dist.toFixed(2));
+                if (dist < 2.5 && !state.isOverlayOpen) {
+                    console.log('🔓 Auto-opening treasure chest');
                     checkInteraction();
                 }
             }
@@ -2731,6 +2758,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const treasureScreen = document.getElementById('treasure-screen');
             if (treasureScreen) {
                 treasureScreen.classList.add('hidden');
+                treasureScreen.classList.remove('force-visible');
                 // Reset inline styles
                 treasureScreen.style.display = '';
                 treasureScreen.style.opacity = '';
@@ -2739,6 +2767,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 state.isOverlayOpen = false;
                 state.lastAchievementClosed = performance.now();
+            }
+        });
+    }
+
+    // Add click handler for treasure bonus button
+    const treasureBonusBtn = document.getElementById('treasure-bonus-btn');
+    if (treasureBonusBtn) {
+        // Make button focusable
+        treasureBonusBtn.setAttribute('tabindex', '0');
+
+        treasureBonusBtn.addEventListener('click', () => {
+            window.open('https://www.wiwo.de/angebote', '_blank');
+        });
+
+        // Add keyboard support (Enter/Space)
+        treasureBonusBtn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                window.open('https://www.wiwo.de/angebote', '_blank');
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                const continueBtn = document.getElementById('treasure-continue-btn');
+                if (continueBtn) continueBtn.focus();
+            }
+        });
+    }
+
+    // Make treasure continue button focusable and add keyboard support
+    const treasureContinueBtn2 = document.getElementById('treasure-continue-btn');
+    if (treasureContinueBtn2) {
+        treasureContinueBtn2.setAttribute('tabindex', '0');
+
+        treasureContinueBtn2.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+                e.preventDefault();
+                treasureContinueBtn2.click();
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                const bonusBtn = document.getElementById('treasure-bonus-btn');
+                if (bonusBtn) bonusBtn.focus();
             }
         });
     }
