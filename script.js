@@ -60,7 +60,8 @@ const state = {
     navigationStartTime: null,
     hasNavigated: false,
     firstSuccessShown: false,
-    lastAchievementClosed: 0 // Timestamp to prevent immediate interaction after closing achievement
+    lastAchievementClosed: 0, // Timestamp to prevent immediate interaction after closing achievement
+    treasureOpened: false // Flag to prevent treasure chest from auto-reopening
 };
 
 function unlockAchievement(id) {
@@ -535,11 +536,9 @@ function init() {
 
     // Make interaction prompt clickable
     document.getElementById('interaction-prompt').addEventListener('click', () => {
-        console.log('🖱️ Interaction prompt clicked');
         checkInteraction();
     });
     document.getElementById('interaction-prompt').addEventListener('touchstart', (e) => {
-        console.log('📱 Interaction prompt touched');
         e.preventDefault();
         checkInteraction();
     });
@@ -830,35 +829,34 @@ function init() {
                 if (obj.name === 'mainHemi') {
                     // Hemisphere light
                     if (CONFIG.lightsOn) {
-                        // Warm Mode
+                        // Warm Mode - Increased brightness
                         obj.color.setHex(0xffffff);
                         obj.groundColor.setHex(0x888888);
-                        obj.intensity = 0.5;
+                        obj.intensity = 0.7; // Increased from 0.5
                     } else {
-                        // Cool/Bright Mode
+                        // Cool/Bright Mode - Much brighter
                         obj.color.setHex(0xddeeff);
                         obj.groundColor.setHex(0x8888aa);
-                        obj.intensity = 0.6;
+                        obj.intensity = 1.0; // Increased from 0.6
                     }
                 } else if (obj.isDirectionalLight) {
                     // Directional light
                     if (CONFIG.lightsOn) {
-                        // Warm Mode
+                        // Warm Mode - Increased brightness
                         obj.color.setHex(0xfff4e6);
-                        obj.intensity = 0.8;
+                        obj.intensity = 1.0; // Increased from 0.8
                     } else {
-                        // Cool/Bright Mode
+                        // Cool/Bright Mode - Very bright
                         obj.color.setHex(0xffffff);
-                        obj.intensity = 0.9;
+                        obj.intensity = 1.3; // Increased from 0.9
                     }
                 } else if (obj.isPointLight || obj.isSpotLight) {
-                    // Keep point/spot lights bright in both modes
-                    obj.intensity = 1.0;
+                    // Point/spot lights - brighter in cool mode
+                    obj.intensity = CONFIG.lightsOn ? 1.0 : 1.5;
                 }
             }
         });
 
-        // console.log(`💡 Lights ${CONFIG.lightsOn ? 'WARM' : 'COOL'}`);
     }
 
     function createSkyTexture() {
@@ -2517,15 +2515,12 @@ function init() {
         // console.log('🎯 checkInteraction - closest object:', closest?.userData, 'type:', closest?.userData?.type);
 
         if (closest) {
-            console.log('🎯 checkInteraction processing:', closest.userData.type);
             if (closest.userData.type === 'switch') {
                 toggleLights();
             } else if (closest.userData.type === 'treasure') {
-                console.log('💎 Treasure interaction triggered');
                 // Handle treasure chest
                 try {
                     unlockAchievement('treasureFound');
-                    console.log('🏆 Achievement unlocked');
                 } catch (e) {
                     console.error('❌ Error unlocking achievement:', e);
                 }
@@ -2539,6 +2534,12 @@ function init() {
                     treasureScreen.classList.remove('hidden');
                     treasureScreen.classList.add('force-visible');
                     state.isOverlayOpen = true;
+
+                    // Focus first button for keyboard navigation
+                    setTimeout(() => {
+                        const bonusBtn = document.getElementById('treasure-bonus-btn');
+                        if (bonusBtn) bonusBtn.focus();
+                    }, 150);
 
                     // Double check visibility
                     setTimeout(() => {
@@ -2640,12 +2641,11 @@ function init() {
             // console.log('✅ Showing prompt:', prompt.innerText, 'for object:', closest.userData);
             prompt.classList.remove('hidden');
 
-            // Auto-open treasure chest if very close
+            // Auto-open treasure chest if very close (only once)
             if (closest.userData.type === 'treasure') {
                 const dist = camera.position.distanceTo(closest.position);
-                console.log('💎 Treasure distance:', dist.toFixed(2));
-                if (dist < 2.5 && !state.isOverlayOpen) {
-                    console.log('🔓 Auto-opening treasure chest');
+                if (dist < 2.5 && !state.isOverlayOpen && !state.treasureOpened) {
+                    state.treasureOpened = true;
                     checkInteraction();
                 }
             }
@@ -2754,7 +2754,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add click handler for treasure continue button
     const treasureContinueBtn = document.getElementById('treasure-continue-btn');
     if (treasureContinueBtn) {
-        treasureContinueBtn.addEventListener('click', () => {
+        treasureContinueBtn.addEventListener('click', (e) => {
+            if (e) e.stopPropagation();
             const treasureScreen = document.getElementById('treasure-screen');
             if (treasureScreen) {
                 treasureScreen.classList.add('hidden');
@@ -2777,15 +2778,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Make button focusable
         treasureBonusBtn.setAttribute('tabindex', '0');
 
-        treasureBonusBtn.addEventListener('click', () => {
-            window.open('https://www.wiwo.de/angebote', '_blank');
+        treasureBonusBtn.addEventListener('click', (e) => {
+            if (e) e.stopPropagation();
+            window.open('https://abo.wiwo.de/', '_blank');
         });
 
         // Add keyboard support (Enter/Space)
         treasureBonusBtn.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                window.open('https://www.wiwo.de/angebote', '_blank');
+                window.open('https://abo.wiwo.de/', '_blank');
             } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
                 e.preventDefault();
                 const continueBtn = document.getElementById('treasure-continue-btn');
@@ -2865,6 +2867,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add keydown handler for screens (close on any key except navigation)
     document.addEventListener('keydown', (e) => {
+        // Allow arrow keys on treasure screen for button navigation
+        const treasureScreen = document.getElementById('treasure-screen');
+        if (treasureScreen && !treasureScreen.classList.contains('hidden')) {
+            return; // Let treasure screen handle its own keyboard events
+        }
+
         const navKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'];
         if (navKeys.includes(e.key)) return;
 
@@ -2916,12 +2924,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const screen = document.getElementById(screenId);
             if (screen) {
                 screen.classList.remove('hidden');
-                console.log(`✅ Showing ${screenName} screen (${screenId})`);
             } else {
                 console.error(`❌ Screen not found: ${screenId}`);
             }
         } else {
-            console.log('Available screens:', Object.keys(screens).join(', '));
         }
     };
 
@@ -2943,11 +2949,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 screen.classList.add('hidden');
             }
         });
-        console.log('✅ All screens hidden');
     };
 
-    console.log('🎮 Debug commands available:');
-    console.log('  testSuccessScreen("screenName") - Show a success screen');
-    console.log('  hideAllScreens() - Hide all screens');
-    console.log('  Available screens: welcome, first, achievement, light, five, floor, treasure, final');
 });
