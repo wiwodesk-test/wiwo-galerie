@@ -515,6 +515,7 @@ wiwo-logo-wiwo {
 }
 
 @media (pointer: coarse),
+(max-width: 1366px) and (hover: none),
 (max-width: 768px) {
     #mobile-controls {
         display: flex;
@@ -697,7 +698,9 @@ wiwo-logo-wiwo {
 }
 
 /* Mobile Overlay Improvements */
-@media (max-width: 768px) {
+@media (max-width: 768px),
+(pointer: coarse),
+(max-width: 1366px) and (hover: none) {
     #cover-overlay {
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
@@ -840,7 +843,9 @@ wiwo-logo-wiwo {
 }
 
 /* Mobile Overlay & Treasure Buttons */
-@media (max-width: 768px) {
+@media (max-width: 768px),
+(pointer: coarse),
+(max-width: 1366px) and (hover: none) {
     .treasure-buttons {
         flex-direction: column;
         gap: 15px;
@@ -902,7 +907,9 @@ wiwo-logo-wiwo {
     display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px),
+(pointer: coarse),
+(max-width: 1366px) and (hover: none) {
     #mobile-controls {
         display: block;
     }
@@ -941,7 +948,9 @@ wiwo-logo-wiwo {
 }
 
 /* Mobile Optimizations for Achievements */
-@media (max-width: 768px) {
+@media (max-width: 768px),
+(pointer: coarse),
+(max-width: 1366px) and (hover: none) {
     .achievements {
         margin-top: 5px;
         gap: 2px;
@@ -970,6 +979,7 @@ wiwo-logo-wiwo {
         padding: 15px;
     }
 }
+
 .force-visible {
     display: flex !important;
     opacity: 1 !important;
@@ -977,6 +987,7 @@ wiwo-logo-wiwo {
     z-index: 100001 !important;
     pointer-events: auto !important;
 }
+
 /* Treasure screen buttons - side by side on desktop, stacked on mobile */
 #treasure-screen wiwo-button {
     margin: 5px;
@@ -989,13 +1000,15 @@ wiwo-logo-wiwo {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px),
+(pointer: coarse),
+(max-width: 1366px) and (hover: none) {
     #treasure-screen wiwo-button {
         display: block;
         width: 100%;
         margin: 8px 0;
     }
-    
+
     /* Even more compact achievement tracker on mobile */
     .achievements {
         margin-top: 8px !important;
@@ -1003,91 +1016,125 @@ wiwo-logo-wiwo {
         padding-top: 8px !important;
         max-height: 140px;
     }
-    
+
     .achievement {
         gap: 6px !important;
         font-size: 10px !important;
         padding: 3px 0;
     }
-    
+
     .achievement-check {
         font-size: 12px !important;
         width: 14px !important;
     }
 }
+
 /* Keyboard focus styling for treasure buttons */
 #treasure-bonus-btn:focus,
 #treasure-continue-btn:focus {
     outline: 3px solid #C5A059 !important;
     outline-offset: 2px;
 }
+
 /* Show only 3 achievements on mobile with scrolling */
-@media (max-width: 768px) {
+@media (max-width: 768px),
+(pointer: coarse),
+(max-width: 1366px) and (hover: none) {
     .achievements {
-        max-height: 75px !important; /* 3 items visible */
+        max-height: 75px !important;
+        /* 3 items visible */
         overflow-y: auto !important;
         overflow-x: hidden;
         scrollbar-width: thin;
         scrollbar-color: #C5A059 #1a1a1a;
     }
-    
+
     /* Webkit scrollbar styling */
     .achievements::-webkit-scrollbar {
         width: 4px;
     }
-    
+
     .achievements::-webkit-scrollbar-track {
         background: #1a1a1a;
     }
-    
+
     .achievements::-webkit-scrollbar-thumb {
         background: #C5A059;
         border-radius: 2px;
     }
 }
-/* Mobile Overlay - No overlap with joystick (UPDATED) */
-@media (max-width: 768px) {
+
+/* Mobile Overlay - Perfect Layout (No Overlap) */
+@media (max-width: 768px),
+(pointer: coarse),
+(max-width: 1366px) and (hover: none) {
+    #cover-overlay {
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
     #cover-overlay .overlay-content {
         flex-direction: column !important;
-        padding: 60px 15px 200px 15px !important;
-        gap: 15px !important;
+        padding: 75px 15px 220px 15px !important;
+        gap: 20px !important;
         width: 100% !important;
         height: 100vh !important;
         max-height: 100vh !important;
         overflow-y: auto !important;
         justify-content: flex-start !important;
+        box-sizing: border-box !important;
     }
 
     #overlay-image-container {
         width: 100% !important;
+        max-width: 100% !important;
         height: auto !important;
-        max-height: 35vh !important;
-        margin: 0 !important;
+        max-height: 40vh !important;
+        min-height: 200px !important;
+        margin: 0 0 15px 0 !important;
+        padding: 0 !important;
         flex-shrink: 0 !important;
         order: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    #overlay-image-container img {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 40vh !important;
+        object-fit: contain !important;
     }
 
     #overlay-info {
         width: 100% !important;
-        padding: 10px 5px !important;
+        max-width: 100% !important;
+        padding: 0 10px 20px 10px !important;
         overflow-y: visible !important;
         flex-grow: 0 !important;
+        flex-shrink: 1 !important;
         max-height: none !important;
         order: 2 !important;
-        margin-bottom: 20px !important;
+        box-sizing: border-box !important;
     }
 
     #close-btn {
         position: fixed !important;
-        top: 20px !important;
-        right: 20px !important;
+        top: max(20px, env(safe-area-inset-top, 20px)) !important;
+        right: max(20px, env(safe-area-inset-right, 20px)) !important;
         z-index: 100002 !important;
-        background: rgba(0, 0, 0, 0.9) !important;
-        border: 3px solid rgba(197, 160, 89, 0.9) !important;
-        width: 50px !important;
-        height: 50px !important;
-        font-size: 30px !important;
-        line-height: 44px !important;
+        background: rgba(197, 160, 89, 0.98) !important;
+        border: 2px solid rgba(0, 0, 0, 0.3) !important;
+        color: #000 !important;
+        width: 54px !important;
+        height: 54px !important;
+        font-size: 32px !important;
+        line-height: 50px !important;
+        text-align: center !important;
         border-radius: 50% !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
 }
