@@ -2074,6 +2074,12 @@ function init() {
     function openOverlay(cover) {
         state.isOverlayOpen = true;
         state.currentCoverId = cover.userData.id;
+
+        // Reset manual close flag since we are opening it
+        if (cover.userData.manuallyClosed) {
+            cover.userData.manuallyClosed = false;
+        }
+
         if (!isIOS && document.exitPointerLock) {
             document.exitPointerLock();
         }
@@ -2169,6 +2175,15 @@ function init() {
 
     function closeOverlay() {
         // console.log('closeOverlay called, current state.isOverlayOpen:', state.isOverlayOpen);
+
+        // Set flag on the current cover to prevent immediate auto-reopen
+        if (state.currentCoverId !== null) {
+            const cover = state.covers.find(c => c.userData.id === state.currentCoverId);
+            if (cover) {
+                cover.userData.manuallyClosed = true;
+            }
+        }
+
         state.isOverlayOpen = false;
         state.lastClosedCoverId = state.currentCoverId;
         state.currentCoverId = null;
@@ -2182,6 +2197,11 @@ function init() {
 
         if (!isIOS && document.body.requestPointerLock) {
             document.body.requestPointerLock();
+        }
+
+        // Remove focus from close button so Enter key works for interaction
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
         }
 
         // Trigger pending achievement after overlay closes
@@ -2335,13 +2355,13 @@ function init() {
                 cover.getWorldPosition(worldPos);
                 const dist = worldPos.distanceTo(camera.position);
 
-                // Reset debounce when player moves far enough away
-                if (state.lastClosedCoverId === cover.userData.id && dist > 2.5) {
-                    state.lastClosedCoverId = null;
+                // Reset debounce flag when player moves far enough away
+                if (cover.userData.manuallyClosed && dist > 2.5) {
+                    cover.userData.manuallyClosed = false;
                 }
 
-                // Find closest cover for auto-open (only if overlay is not already open)
-                if (!state.isOverlayOpen && dist < minDist && state.lastClosedCoverId !== cover.userData.id) {
+                // Find closest cover for auto-open (only if overlay is not already open and not manually closed)
+                if (!state.isOverlayOpen && dist < minDist && !cover.userData.manuallyClosed) {
                     const dir = new THREE.Vector3();
                     camera.getWorldDirection(dir);
                     const toCover = worldPos.clone().sub(camera.position).normalize();
