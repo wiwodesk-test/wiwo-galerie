@@ -15,7 +15,7 @@ const CONFIG = {
     eyeHeight: 1.7,
     totalCovers: 100,
     interactionDist: 3.0,
-    lightsOn: false // Default to Normal (Warm) mode
+    lightsOn: true // Default to Bright (Standard) mode
 };
 
 
@@ -774,13 +774,13 @@ function init() {
     }
 
     function setupLighting() {
-        // Initialize with NORMAL MODE (Warm/Cozy) values
-        const hemiLight = new THREE.HemisphereLight(0xfff0e0, 0x444444, 0.5);
+        // Initialize with BRIGHT MODE (Standard) values
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x888888, 1.2);
         hemiLight.position.set(0, 20, 0);
         hemiLight.name = 'mainHemi';
         scene.add(hemiLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffdcb4, 0.8);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
         dirLight.position.set(10, 30, 10);
         dirLight.castShadow = true;
 
@@ -823,36 +823,36 @@ function init() {
     function toggleLights() {
         CONFIG.lightsOn = !CONFIG.lightsOn;
 
-        // Toggle between Normal (Warm) and Bright (Cooler) modes
+        // Toggle between Bright (Standard) and Darker (Switched) modes
         scene.traverse((obj) => {
             if (obj.isLight) {
                 if (obj.name === 'mainHemi') {
                     // Hemisphere light
                     if (CONFIG.lightsOn) {
-                        // Warm Mode - Increased brightness
+                        // Bright Mode (Standard) - Very bright
                         obj.color.setHex(0xffffff);
                         obj.groundColor.setHex(0x888888);
-                        obj.intensity = 0.7; // Increased from 0.5
+                        obj.intensity = 1.2;
                     } else {
-                        // Cool/Bright Mode - Much brighter
-                        obj.color.setHex(0xddeeff);
-                        obj.groundColor.setHex(0x8888aa);
-                        obj.intensity = 1.0; // Increased from 0.6
+                        // Darker Mode (Switched) - Warm and cozy
+                        obj.color.setHex(0xfff0e0);
+                        obj.groundColor.setHex(0x444444);
+                        obj.intensity = 0.5;
                     }
                 } else if (obj.isDirectionalLight) {
                     // Directional light
                     if (CONFIG.lightsOn) {
-                        // Warm Mode - Increased brightness
-                        obj.color.setHex(0xfff4e6);
-                        obj.intensity = 1.0; // Increased from 0.8
-                    } else {
-                        // Cool/Bright Mode - Very bright
+                        // Bright Mode (Standard) - Very bright
                         obj.color.setHex(0xffffff);
-                        obj.intensity = 1.3; // Increased from 0.9
+                        obj.intensity = 1.5;
+                    } else {
+                        // Darker Mode (Switched) - Warm
+                        obj.color.setHex(0xffdcb4);
+                        obj.intensity = 0.8;
                     }
                 } else if (obj.isPointLight || obj.isSpotLight) {
-                    // Point/spot lights - brighter in cool mode
-                    obj.intensity = CONFIG.lightsOn ? 1.0 : 1.5;
+                    // Point/spot lights
+                    obj.intensity = CONFIG.lightsOn ? 1.5 : 1.0;
                 }
             }
         });
@@ -2470,6 +2470,11 @@ function init() {
         });
 
         state.interactables.forEach(obj => {
+            // Skip treasure chest if player is on ground floor
+            if (obj.userData.type === 'treasure' && player.y < 4.0) {
+                return;
+            }
+
             const dist = obj.position.distanceTo(camera.position);
             // Larger interaction distance for treasure chest
             const maxDist = obj.userData.type === 'treasure' ? 4.5 : minDist;
