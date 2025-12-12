@@ -18,12 +18,48 @@ const CONFIG = {
     lightsOn: true // Default to Bright (Standard) mode
 };
 
+// Function to load cover data from CSV
+function loadCoversFromCSV() {
+    fetch('covers.csv')
+        .then(response => response.text())
+        .then(text => {
+            const lines = text.split('\n');
+            // Skip header (row 0)
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                // Simple parsing: split by first two commas to get ID and Title, rest is Description
+                const firstComma = line.indexOf(',');
+                const secondComma = line.indexOf(',', firstComma + 1);
+
+                if (firstComma !== -1 && secondComma !== -1) {
+                    const numStr = line.substring(0, firstComma);
+                    const title = line.substring(firstComma + 1, secondComma);
+                    const description = line.substring(secondComma + 1);
+
+                    const id = parseInt(numStr) - 1; // 1-based CSV to 0-based Array
+
+                    if (id >= 0 && id < CONFIG.totalCovers && typeof COVERS_DATA !== 'undefined' && COVERS_DATA[id]) {
+                        COVERS_DATA[id].title = title;
+                        COVERS_DATA[id].description = description;
+                    }
+                }
+            }
+            console.log('✅ Loaded cover data from CSV');
+        })
+        .catch(err => console.warn('⚠️ Could not load covers.csv, using defaults:', err));
+}
+
+// Start loading CSV immediately
+loadCoversFromCSV();
 
 const state = {
     viewedCovers: new Set(),
     openedCovers: new Set(), // Track covers that have had overlay opened
     keys: { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, KeyW: false, KeyS: false, KeyA: false, KeyD: false },
     walls: [],
+    wallMeshes: [],
     obstacles: [],
     covers: [],
     interactables: [],
@@ -948,8 +984,10 @@ function init() {
             wall.scale.set(width, 1, depth);
             wall.castShadow = true;
             wall.receiveShadow = true;
+            wall.receiveShadow = true;
             scene.add(wall);
             state.walls.push(new THREE.Box3().setFromObject(wall));
+            if (state.wallMeshes) state.wallMeshes.push(wall);
         }
 
         function addCeilingLight(x, z) {
@@ -1944,7 +1982,51 @@ function init() {
         const coverW = 1.5;
         const coverH = 2;
         const coverGeo = new THREE.PlaneGeometry(coverW, coverH);
-        let coverIndex = 0;
+
+        // Helper for manual placement
+        function placeManualCover(index, x, z, rot) {
+            const group = new THREE.Group();
+            group.position.set(x, CONFIG.eyeHeight, z);
+            group.rotation.y = rot;
+
+            const frame = createFrame(coverW, coverH, index);
+            frame.position.z = 0;
+            group.add(frame);
+
+            const mat = new THREE.MeshStandardMaterial({
+                roughness: 0.4,
+                color: 0xffffff,
+                emissive: 0x000000,
+                transparent: true,
+                opacity: 1.0
+            });
+
+            mat.map = createCoverTexture(index, false, mat);
+            mat.needsUpdate = true;
+            const mesh = new THREE.Mesh(coverGeo, mat);
+            mesh.userData = { id: index, viewed: false };
+            mesh.position.z = 0.11;
+            group.add(mesh);
+
+            scene.add(group);
+            state.covers.push(mesh);
+        }
+
+        // --- SPECIAL PLACEMENT FOR COVERS 0, 1, 2 ---
+        // Room 1 South Wall (Inner)
+        // Wall width is 8m (from x=-4 to x=4)
+
+        // Cover 2 (Left)
+        placeManualCover(2, -2.5, 19.65, Math.PI);
+
+        // Cover 1 (Center)
+        placeManualCover(1, 0, 19.65, Math.PI);
+
+        // Cover 0 (Right)
+        placeManualCover(0, 2.5, 19.65, Math.PI);
+
+        // Start automatic placement from Index 3
+        let coverIndex = 3;
 
         function placeRow(startX, startZ, endX, endZ, facing, count, margin = 2.0) {
             const dx = (endX - startX);
@@ -1994,41 +2076,37 @@ function init() {
             }
         }
 
-        // Distribute 100 covers across 4 rooms (25 per room)
-        // Avoid gaps/passages.
-        // Outer walls are continuous. Inner walls have gaps.
+        // --- REMAINING 97 COVERS (Indices 3-99) ---
 
-        // Room 1 (NW)
-        // West Wall (Outer): x=-9.65, z: 0->20. (9 covers)
-        placeRow(-9.65, 0, -9.65, 20, Math.PI / 2, 9);
+        // Room 1 (NW) - Other Walls
+        // West Wall (Outer): x=-9.65, z: 20->0. (9 covers - Reversed to match flow)
+        placeRow(-9.65, 20, -9.65, 0, Math.PI / 2, 9);
         // North Wall (Outer): z=0.35, x: -10->10. (9 covers)
         placeRow(-10, 0.35, 10, 0.35, 0, 9);
-        // East Wall (Inner Solid): x=9.65, z: 0->10. (3 covers)
-        placeRow(9.65, 0, 9.65, 10, -Math.PI / 2, 3);
-        // South Wall (Inner Solid): z=19.65, x: -5->5. (4 covers)
-        placeRow(-5, 19.65, 5, 19.65, Math.PI, 4);
+        // East Wall (Inner Solid): x=9.65, z: 0->10. (4 covers)
+        placeRow(9.65, 0, 9.65, 10, -Math.PI / 2, 4);
 
         // Room 2 (NE)
-        // North Wall (Outer): z=0.35, x: 10->30. (9 covers)
-        placeRow(10, 0.35, 30, 0.35, 0, 9);
-        // East Wall Part 1 (Outer): x=29.65, z=0->6. (2 covers: 34-35)
+        // North Wall (Outer): z=0.35, x: 10->30. (8 covers - Reduced from 9)
+        placeRow(10, 0.35, 30, 0.35, 0, 8);
+        // East Wall Part 1 (Outer): x=29.65, z=0->6. (2 covers)
         placeRow(29.65, 0, 29.65, 6, -Math.PI / 2, 2);
-        // Staircase Wall (West facing): x=23.9, z=5->15. (5 covers: 36-40) - Reduced margin for spacing
+        // Staircase Wall (West facing): x=23.9, z=5->15. (5 covers)
         placeRow(23.9, 5, 23.9, 15, -Math.PI / 2, 5, 1.0);
-        // East Wall Part 2 (Outer): x=29.65, z=14->20. (2 covers: 41-42)
+        // East Wall Part 2 (Outer): x=29.65, z=14->20. (2 covers)
         placeRow(29.65, 14, 29.65, 20, -Math.PI / 2, 2);
-        // South Wall (Inner Solid): z=19.65, x: 15->25. (3 covers)
-        placeRow(25, 19.65, 15, 19.65, Math.PI, 3);
+        // South Wall (Inner Solid): z=19.65, x: 15->25. (4 covers - Increased from 3)
+        placeRow(25, 19.65, 15, 19.65, Math.PI, 4);
         // West Wall (Inner Solid): x=10.35, z: 0->10. (4 covers)
         placeRow(10.35, 10, 10.35, 0, Math.PI / 2, 4);
 
         // Room 3 (SE)
-        // East Wall (Outer): x=29.65, z: 20->40. (9 covers)
-        placeRow(29.65, 20, 29.65, 40, -Math.PI / 2, 9);
+        // East Wall (Outer): x=29.65, z: 20->40. (8 covers - Reduced from 9)
+        placeRow(29.65, 20, 29.65, 40, -Math.PI / 2, 8);
         // South Wall (Outer): z=39.65, x: 10->30. (9 covers)
         placeRow(30, 39.65, 10, 39.65, Math.PI, 9);
-        // West Wall (Inner Solid): x=10.35, z: 30->40. (3 covers)
-        placeRow(10.35, 40, 10.35, 30, Math.PI / 2, 3);
+        // West Wall (Inner Solid): x=10.35, z: 30->40. (4 covers - Increased from 3)
+        placeRow(10.35, 40, 10.35, 30, Math.PI / 2, 4);
         // North Wall (Inner Solid): z=20.35, x: 15->25. (4 covers)
         placeRow(15, 20.35, 25, 20.35, 0, 4);
 
@@ -2037,8 +2115,8 @@ function init() {
         placeRow(10, 39.65, -10, 39.65, Math.PI, 9);
         // West Wall (Outer): x=-9.65, z: 20->40. (9 covers)
         placeRow(-9.65, 40, -9.65, 20, Math.PI / 2, 9);
-        // North Wall (Inner Solid): z=20.35, x: -5->5. (3 covers)
-        placeRow(5, 20.35, -5, 20.35, 0, 3);
+        // North Wall (Inner Solid): z=20.35, x: -5->5. (3 covers - Reversed to match flow)
+        placeRow(-5, 20.35, 5, 20.35, 0, 3);
         // East Wall (Inner Solid): x=9.65, z: 30->40. (4 covers)
         placeRow(9.65, 30, 9.65, 40, -Math.PI / 2, 4);
     }
@@ -2115,7 +2193,7 @@ function init() {
         const description = coverData ? coverData.description : `This is the special 100th Anniversary Edition cover number ${coverIndex + 1}.`;
 
         document.getElementById('overlay-title').innerText = title;
-        document.getElementById('overlay-desc').innerText = description;
+        document.getElementById('overlay-desc').innerHTML = description;
 
         const container = document.getElementById('overlay-image-container');
         container.innerHTML = '';
@@ -2371,10 +2449,20 @@ function init() {
 
                     // Require looking directly at the cover
                     if (dot > 0.85) {
+                        // Raycast to check for wall occlusion
+                        const raycaster = new THREE.Raycaster(camera.position, toCover);
+                        // Check intersection with walls
+                        const intersects = raycaster.intersectObjects(state.wallMeshes || []);
+
+                        // If a wall is hit and it is closer than the cover, it is blocking the view
+                        if (intersects.length > 0 && intersects[0].distance < dist) {
+                            return; // Wall is blocking view
+                        }
+
                         closest = cover;
                         minDist = dist;
-                        // console.log(`  → This is the closest qualifying cover!`);
                     }
+                    // console.log(`  → This is the closest qualifying cover!`);
                 }
 
                 // Mark as viewed if seen (separate from auto-open) - only for visual feedback
