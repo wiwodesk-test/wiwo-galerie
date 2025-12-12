@@ -16,8 +16,8 @@ const COVERS_DATA = [
     }
 ];
 
-// Generate entries for Cover 2 to Cover 42
-for (let i = 1; i < 42; i++) {
+// Generate entries for Cover 2 to Cover 100
+for (let i = 1; i < 100; i++) {
     const num = (i + 1).toString().padStart(2, '0');
     COVERS_DATA.push({
         id: i,
