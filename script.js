@@ -1452,7 +1452,7 @@ function init() {
         }
 
         // Create two podcast headphones on the table
-        const podcastBrightcoveUrl = 'https://players.brightcove.net/1050888054001/r1JTR5Olx_default/index.html?videoId=6387754357112&autoplay=true';
+        const podcastBrightcoveUrl = 'https://players.brightcove.net/1050888054001/r1JTR5Olx_default/index.html?videoId=6387754357112&autoplay=any&playsinline=true';
         createHeadphones(-0.8, 6.0, 10, podcastBrightcoveUrl, 'WirtschaftsWoche Podcast');
         createHeadphones(0.8, 6.0, 10, podcastBrightcoveUrl, 'WirtschaftsWoche Podcast');
 
@@ -1488,7 +1488,7 @@ function init() {
         // Video Thumbnail on South Wall of Room 2 Upper
         const videoId = 'VYbzclXAAd8';
         const thumbnailUrl = 'assets/textures/video_teaser.png';
-        const brightcoveUrl = 'https://players.brightcove.net/1050888054001/r1JTR5Olx_default/index.html?videoId=6387752852112&autoplay=true';
+        const brightcoveUrl = 'https://players.brightcove.net/1050888054001/r1JTR5Olx_default/index.html?videoId=6387752852112&autoplay=any&playsinline=true';
 
         const thumbnailTexture = state.textureLoader.load(thumbnailUrl);
         thumbnailTexture.encoding = THREE.sRGBEncoding;
@@ -2691,9 +2691,13 @@ function init() {
                     // Start video/podcast directly in fullscreen
                     const videoIframe = document.getElementById('video-screen');
                     if (videoSrc) {
-                        // Add autoplay parameter to custom video sources (Brightcove, podcasts, etc.)
-                        const separator = videoSrc.includes('?') ? '&' : '?';
-                        videoIframe.src = `${videoSrc}${separator}autoplay=1`;
+                        // Add autoplay parameter to custom video sources if not already present
+                        if (!videoSrc.includes('autoplay=')) {
+                            const separator = videoSrc.includes('?') ? '&' : '?';
+                            videoIframe.src = `${videoSrc}${separator}autoplay=1`;
+                        } else {
+                            videoIframe.src = videoSrc;
+                        }
                         state.playingVideoType = 'custom';
                     } else {
                         videoIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1`;
