@@ -1452,7 +1452,7 @@ function init() {
         }
 
         // Create two podcast headphones on the table
-        const podcastBrightcoveUrl = 'https://players.brightcove.net/1050888054001/r1JTR5Olx_default/index.html?videoId=6387754357112&autoplay=any&playsinline=true';
+        const podcastBrightcoveUrl = 'https://players.brightcove.net/1050888054001/r1JTR5Olx_default/index.html?videoId=6387754357112&autoplay=true&playsinline=true';
         createHeadphones(-0.8, 6.0, 10, podcastBrightcoveUrl, 'WirtschaftsWoche Podcast');
         createHeadphones(0.8, 6.0, 10, podcastBrightcoveUrl, 'WirtschaftsWoche Podcast');
 
@@ -1488,7 +1488,7 @@ function init() {
         // Video Thumbnail on South Wall of Room 2 Upper
         const videoId = 'VYbzclXAAd8';
         const thumbnailUrl = 'assets/textures/video_teaser.png';
-        const brightcoveUrl = 'https://players.brightcove.net/1050888054001/r1JTR5Olx_default/index.html?videoId=6387752852112&autoplay=any&playsinline=true';
+        const brightcoveUrl = 'https://players.brightcove.net/1050888054001/r1JTR5Olx_default/index.html?videoId=6387752852112&autoplay=true&playsinline=true';
 
         const thumbnailTexture = state.textureLoader.load(thumbnailUrl);
         thumbnailTexture.encoding = THREE.sRGBEncoding;
