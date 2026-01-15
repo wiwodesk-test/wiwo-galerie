@@ -2691,7 +2691,9 @@ function init() {
                     // Start video/podcast directly in fullscreen
                     const videoIframe = document.getElementById('video-screen');
                     if (videoSrc) {
-                        videoIframe.src = videoSrc;
+                        // Add autoplay parameter to custom video sources (Brightcove, podcasts, etc.)
+                        const separator = videoSrc.includes('?') ? '&' : '?';
+                        videoIframe.src = `${videoSrc}${separator}autoplay=1`;
                         state.playingVideoType = 'custom';
                     } else {
                         videoIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1`;
