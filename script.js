@@ -772,8 +772,8 @@ function init() {
                 closeVideo();
                 return;
             }
-            // Space toggles pause/play (and restarts if paused)
-            if (e.code === 'Space') {
+            // Space toggles pause/play (only for YouTube for now, others use native controls)
+            if (e.code === 'Space' && state.playingVideoType === 'youtube') {
                 e.preventDefault();
                 const videoIframe = document.getElementById('video-screen');
                 if (videoIframe && videoIframe.contentWindow) {
@@ -1443,7 +1443,7 @@ function init() {
             group.position.set(x, y, z);
             group.userData = {
                 type: 'podcast',
-                videoId: podcastId,
+                videoSrc: podcastId, // Use videoSrc for Brightcove URL
                 title: podcastTitle
             };
 
@@ -1452,8 +1452,9 @@ function init() {
         }
 
         // Create two podcast headphones on the table
-        createHeadphones(-0.8, 6.0, 10, 'c7_WMRuzAvc', 'WirtschaftsWoche Podcast');
-        createHeadphones(0.8, 6.0, 10, 'c7_WMRuzAvc', 'WirtschaftsWoche Podcast');
+        const podcastBrightcoveUrl = 'https://players.brightcove.net/1050888054001/r1JTR5Olx_default/index.html?videoId=6387754357112&autoplay=true';
+        createHeadphones(-0.8, 6.0, 10, podcastBrightcoveUrl, 'WirtschaftsWoche Podcast');
+        createHeadphones(0.8, 6.0, 10, podcastBrightcoveUrl, 'WirtschaftsWoche Podcast');
 
         // Table in Room 2 Upper (East) for Remote
         const table2 = new THREE.Mesh(tableGeo, tableMat);
@@ -1486,7 +1487,8 @@ function init() {
 
         // Video Thumbnail on South Wall of Room 2 Upper
         const videoId = 'VYbzclXAAd8';
-        const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        const thumbnailUrl = 'assets/textures/video_teaser.png';
+        const brightcoveUrl = 'https://players.brightcove.net/1050888054001/r1JTR5Olx_default/index.html?videoId=6387752852112&autoplay=true';
 
         const thumbnailTexture = state.textureLoader.load(thumbnailUrl);
         thumbnailTexture.encoding = THREE.sRGBEncoding;
@@ -1503,10 +1505,12 @@ function init() {
         thumbnailScreen.castShadow = true;
         thumbnailScreen.receiveShadow = true;
         thumbnailScreen.userData = {
-            videoId: videoId // Add video ID so it can be interacted with
+            videoId: videoId, // Keep for legacy/thumbnail
+            videoSrc: brightcoveUrl // Brightcove URL
         };
         scene.add(thumbnailScreen);
         state.covers.push(thumbnailScreen); // Add to covers so it can be interacted with
+        state.interactables.push(thumbnailScreen); // Add to interactables for wider range check
 
         // Add a frame around the thumbnail
         const thumbnailFrame = createFrame(8, 4.5);
@@ -1521,7 +1525,7 @@ function init() {
         remote.position.set(20, 6.05, 10);
         remote.userData = {
             type: 'remote',
-            videoId: 'VYbzclXAAd8' // YouTube video ID
+            videoSrc: brightcoveUrl // Brightcove URL
         };
         scene.add(remote);
         state.interactables.push(remote);
@@ -2564,15 +2568,21 @@ function init() {
             }
 
             const dist = obj.position.distanceTo(camera.position);
-            // Larger interaction distance for treasure chest
-            const maxDist = obj.userData.type === 'treasure' ? 4.5 : minDist;
+            // Larger interaction distance for treasure chest and video screens
+            let maxDist = minDist;
+            if (obj.userData.type === 'treasure') maxDist = 4.5;
+            else if (obj.userData.videoSrc || obj.userData.videoId) maxDist = 10.0; // Much larger range for video
+
             if (dist < maxDist) {
                 const dir = new THREE.Vector3();
                 camera.getWorldDirection(dir);
                 const toObj = obj.position.clone().sub(camera.position).normalize();
                 const dot = dir.dot(toObj);
-                // More forgiving angle for treasure chest (0.6 instead of 0.8)
-                const angleThreshold = obj.userData.type === 'treasure' ? 0.6 : 0.8;
+
+                // More forgiving angle for treasure chest and video
+                let angleThreshold = 0.8;
+                if (obj.userData.type === 'treasure') angleThreshold = 0.6;
+                else if (obj.userData.videoSrc || obj.userData.videoId) angleThreshold = 0.5; // Very wide angle for video
                 if (dot > angleThreshold) {
                     // Raycast check for interactables too
                     raycaster.set(camera.position, toObj);
@@ -2669,9 +2679,10 @@ function init() {
                 if (!isIOS && document.exitPointerLock) {
                     document.exitPointerLock();
                 }
-            } else if (closest.userData.type === 'remote' || closest.userData.type === 'podcast' || closest.userData.videoId || closest.userData.podcastId) {
+            } else if (closest.userData.type === 'remote' || closest.userData.type === 'podcast' || closest.userData.videoId || closest.userData.podcastId || closest.userData.videoSrc) {
                 // Handle remote, podcast headphones, or covers with video/podcast
                 const videoId = closest.userData.videoId || closest.userData.podcastId;
+                const videoSrc = closest.userData.videoSrc;
 
                 if (state.isVideoPlaying) {
                     // Stop video/podcast
@@ -2679,7 +2690,13 @@ function init() {
                 } else {
                     // Start video/podcast directly in fullscreen
                     const videoIframe = document.getElementById('video-screen');
-                    videoIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1`;
+                    if (videoSrc) {
+                        videoIframe.src = videoSrc;
+                        state.playingVideoType = 'custom';
+                    } else {
+                        videoIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1`;
+                        state.playingVideoType = 'youtube';
+                    }
                     videoIframe.style.display = 'block';
 
                     // Apply fullscreen styles immediately
@@ -2698,6 +2715,9 @@ function init() {
 
                     state.isVideoPlaying = true;
                     state.isVideoPaused = false;
+
+                    // Focus iframe to allow native player controls
+                    videoIframe.focus();
 
                     // Release pointer lock when video starts
                     if (!isIOS && document.exitPointerLock) {
@@ -2738,7 +2758,7 @@ function init() {
                 prompt.innerText = state.isVideoPlaying ? 'Video stoppen' : 'Video abspielen';
             } else if (closest.userData.type === 'podcast') {
                 prompt.innerText = state.isVideoPlaying ? 'Podcast stoppen' : 'Podcast anhören';
-            } else if (closest.userData.videoId) {
+            } else if (closest.userData.videoId || closest.userData.videoSrc) {
                 // Cover with video
                 prompt.innerText = state.isVideoPlaying ? 'Video stoppen' : 'Video abspielen';
             } else if (closest.userData.podcastId) {
