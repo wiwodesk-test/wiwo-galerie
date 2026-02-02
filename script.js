@@ -2255,6 +2255,12 @@ function init() {
             overlay.style.setProperty('visibility', 'visible', 'important');
             overlay.style.setProperty('pointer-events', 'auto', 'important');
         }
+
+        // Hide mobile controls while overlay is open
+        const mobileControls = document.getElementById('mobile-controls');
+        if (mobileControls) {
+            mobileControls.style.display = 'none';
+        }
     }
 
     function closeOverlay() {
@@ -2278,6 +2284,12 @@ function init() {
         overlay.style.opacity = '';
         overlay.style.visibility = '';
         overlay.style.pointerEvents = '';
+
+        // Restore mobile controls visibility
+        const mobileControls = document.getElementById('mobile-controls');
+        if (mobileControls) {
+            mobileControls.style.display = '';
+        }
 
         if (!isIOS && document.body.requestPointerLock) {
             document.body.requestPointerLock();
