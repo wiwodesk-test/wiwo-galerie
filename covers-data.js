@@ -691,21 +691,21 @@ const COVERS_DATA = [
         lowRes: "assets/covers/low/cover_98.jpg",
         highRes: "assets/covers/high/cover_98.jpg",
         title: "Nr. 28, 2025",
-        description: "Bei allen Negativmeldungen bedarf es auch positien Nachrichten. Die deutsche Autoindustrie macht es den Konkurrenten aus China eben doch noch bei manchen Themen vor. – Celine Imensek"
+        description: "Erkennen Sie die beiden Männer? Elon Musk ist als großer Aufräumer Donald Trumps gestartet. Seine Anti-Bürokratie-Behörde DOGE gibt es heute nicht mehr. – Celine Imensek"
     },
     {
         id: 98,
         lowRes: "assets/covers/low/cover_99.jpg",
         highRes: "assets/covers/high/cover_99.jpg",
         title: "Nr. 30, 2025",
-        description: "Sie wollen wissen, wie Sie Ihre Kraftreserve nicht von beiden Seiten anbrennen? Der Wiwo-Titel zum Thema Resilienz ist heute noch immer aktuell und in diesen Zeiten sicher einen Lesemoment wert. – Celine Imensek"
+        description: "Bei allen Negativmeldungen bedarf es auch positien Nachrichten. Die deutsche Autoindustrie macht es den Konkurrenten aus China eben doch noch bei manchen Themen vor. – Celine Imensek"
     },
     {
         id: 99,
         lowRes: "assets/covers/low/cover_100.jpg",
         highRes: "assets/covers/high/cover_100.jpg",
         title: "Nr. 04, 2025",
-        description: "Erkennen Sie die beiden Männer? Elon Musk ist als großer Aufräumer Donald Trumps gestartet. Seine Anti-Bürokratie-Behörde DOGE gibt es heute nicht mehr. – Celine Imensek"
+        description: "Sie wollen wissen, wie Sie Ihre Kraftreserve nicht von beiden Seiten anbrennen? Der Wiwo-Titel zum Thema Resilienz ist heute noch immer aktuell und in diesen Zeiten sicher einen Lesemoment wert. – Celine Imensek"
     }
 ];
 
