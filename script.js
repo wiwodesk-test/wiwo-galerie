@@ -52,7 +52,8 @@ function loadCoversFromCSV() {
 }
 
 // Start loading CSV immediately
-loadCoversFromCSV();
+// loadCoversFromCSV(); // Data is now pre-loaded in covers-data.js
+console.log('✅ Covers successfully loaded from static data file');
 
 const state = {
     viewedCovers: new Set(),
@@ -1452,7 +1453,8 @@ function init() {
         }
 
         // Create two podcast headphones on the table
-        const podcastBrightcoveUrl = 'https://players.brightcove.net/1050888054001/r1JTR5Olx_default/index.html?videoId=6387754357112&autoplay=true&playsinline=true';
+        // Create two podcast headphones on the table
+        const podcastBrightcoveUrl = 'https://players.brightcove.net/1050888054001/default_default/index.html?videoId=6388672410112&autoplay=true&playsinline=true';
         createHeadphones(-0.8, 6.0, 10, podcastBrightcoveUrl, 'WirtschaftsWoche Podcast');
         createHeadphones(0.8, 6.0, 10, podcastBrightcoveUrl, 'WirtschaftsWoche Podcast');
 
@@ -1488,7 +1490,7 @@ function init() {
         // Video Thumbnail on South Wall of Room 2 Upper
         const videoId = 'VYbzclXAAd8';
         const thumbnailUrl = 'assets/textures/video_teaser.png';
-        const brightcoveUrl = 'https://players.brightcove.net/1050888054001/r1JTR5Olx_default/index.html?videoId=6387752852112&autoplay=true&playsinline=true';
+        const brightcoveUrl = 'https://players.brightcove.net/1050888054001/default_default/index.html?videoId=6387752852112&autoplay=true&playsinline=true';
 
         const thumbnailTexture = state.textureLoader.load(thumbnailUrl);
         thumbnailTexture.encoding = THREE.sRGBEncoding;
@@ -2911,22 +2913,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Add click handler for treasure bonus button
-    const treasureBonusBtn = document.getElementById('treasure-bonus-btn');
-    if (treasureBonusBtn) {
+    // Add click handler for treasure shop button
+    const treasureShopBtn = document.getElementById('treasure-shop-btn');
+    if (treasureShopBtn) {
         // Make button focusable
-        treasureBonusBtn.setAttribute('tabindex', '0');
+        treasureShopBtn.setAttribute('tabindex', '0');
 
-        treasureBonusBtn.addEventListener('click', (e) => {
-            if (e) e.stopPropagation();
-            window.open('https://abo.wiwo.de/', '_blank');
+        treasureShopBtn.addEventListener('click', (e) => {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            window.open('http://shop-wirtschaftswoche.de/', '_blank');
         });
 
         // Add keyboard support (Enter/Space)
-        treasureBonusBtn.addEventListener('keydown', (e) => {
+        treasureShopBtn.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                window.open('https://abo.wiwo.de/', '_blank');
+                window.open('http://shop-wirtschaftswoche.de/', '_blank');
             } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
                 e.preventDefault();
                 const continueBtn = document.getElementById('treasure-continue-btn');
@@ -2946,8 +2951,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 treasureContinueBtn2.click();
             } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
                 e.preventDefault();
-                const bonusBtn = document.getElementById('treasure-bonus-btn');
-                if (bonusBtn) bonusBtn.focus();
+                const shopBtn = document.getElementById('treasure-shop-btn');
+                if (shopBtn) shopBtn.focus();
             }
         });
     }
