@@ -698,7 +698,7 @@ const COVERS_DATA = [
         lowRes: "assets/covers/low/cover_99.jpg",
         highRes: "assets/covers/high/cover_99.jpg",
         title: "Nr. 30, 2025",
-        description: "Bei allen Negativmeldungen bedarf es auch positien Nachrichten. Die deutsche Autoindustrie macht es den Konkurrenten aus China eben doch noch bei manchen Themen vor. – Celine Imensek"
+        description: "Bei allen Negativmeldungen bedarf es auch positiven Nachrichten. Die deutsche Autoindustrie macht es den Konkurrenten aus China eben doch noch bei manchen Themen vor. – Celine Imensek"
     },
     {
         id: 99,
@@ -713,3 +713,4 @@ const COVERS_DATA = [
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = COVERS_DATA;
 }
+
