@@ -367,7 +367,7 @@ function getGroundHeight(x, z) {
     // Bottom: z=15 (y=0). Top: z=5 (y=5).
     if (x >= 24 && x <= 27 && z >= 5 && z <= 15) {
         const h = (15 - z) * 0.5;
-        return Math.max(0, Math.min(5.02, h));
+        return Math.max(0, Math.min(5.12, h));
     }
 
     // Second Floor Area (Room 1 & 2)
@@ -376,7 +376,7 @@ function getGroundHeight(x, z) {
     // We use a hysteresis or check previous Y to decide.
     // Here we assume if you are above 4.0, you are on the 2nd floor.
     if (player.y >= 4.0 && x >= -10 && x <= 30 && z >= 0 && z <= 20) {
-        return 5.02; // Slightly above 5.0 to avoid collision with ground floor wall tops
+        return 5.12; // Slightly above 5.1 to avoid collision with ground floor wall tops
     }
     return 0;
 }
@@ -1070,7 +1070,7 @@ function init() {
         const floorAboveGeo = new THREE.PlaneGeometry(20, 20);
         const floorAbove = new THREE.Mesh(floorAboveGeo, wallMat);
         floorAbove.rotation.x = -Math.PI / 2;
-        floorAbove.position.set(0, CONFIG.wallHeight + 0.01, 30);
+        floorAbove.position.set(0, CONFIG.wallHeight + 0.1, 30);
         scene.add(floorAbove);
 
         // Room 4 (SE) - HIGH CEILING (5x height)
@@ -1138,9 +1138,9 @@ function init() {
         // --- Second Floor & Stairs ---
 
         // Stairs in Room 2 (NE)
-        // x: 24-27, z: 5-15. Rise from y=0 to y=5.01.
+        // x: 24-27, z: 5-15. Rise from y=0 to y=5.1.
         const steps = 20;
-        const stepHeight = 5.01 / steps;
+        const stepHeight = 5.1 / steps;
         const stepDepth = 10 / steps;
         const stepWidth = 3;
         const stepGeo = new THREE.BoxGeometry(stepWidth, stepHeight, stepDepth);
@@ -1165,7 +1165,7 @@ function init() {
 
         function addRailing(x, z, w, d) {
             const r = new THREE.Mesh(new THREE.BoxGeometry(w, railHeight, d), railMat);
-            r.position.set(x, 5 + railHeight / 2, z);
+            r.position.set(x, 5.1 + railHeight / 2, z);
             scene.add(r);
             state.obstacles.push(new THREE.Box3().setFromObject(r));
         }
@@ -1208,7 +1208,7 @@ function init() {
         const f2Geo1 = new THREE.PlaneGeometry(34, 20);
         const f2_1 = new THREE.Mesh(f2Geo1, floorMat);
         f2_1.rotation.x = -Math.PI / 2;
-        f2_1.position.set(7, 5.01, 10);
+        f2_1.position.set(7, 5.1, 10);
         f2_1.receiveShadow = true;
         scene.add(f2_1);
 
@@ -1216,7 +1216,7 @@ function init() {
         const f2Geo2 = new THREE.PlaneGeometry(3, 20);
         const f2_2 = new THREE.Mesh(f2Geo2, floorMat);
         f2_2.rotation.x = -Math.PI / 2;
-        f2_2.position.set(28.5, 5.01, 10);
+        f2_2.position.set(28.5, 5.1, 10);
         f2_2.receiveShadow = true;
         scene.add(f2_2);
 
@@ -1224,7 +1224,7 @@ function init() {
         const f2Geo3 = new THREE.PlaneGeometry(3, 5);
         const f2_3 = new THREE.Mesh(f2Geo3, floorMat);
         f2_3.rotation.x = -Math.PI / 2;
-        f2_3.position.set(25.5, 5.01, 2.5);
+        f2_3.position.set(25.5, 5.1, 2.5);
         f2_3.receiveShadow = true;
         scene.add(f2_3);
 
@@ -1232,7 +1232,7 @@ function init() {
         const f2Geo4 = new THREE.PlaneGeometry(3, 5);
         const f2_4 = new THREE.Mesh(f2Geo4, floorMat);
         f2_4.rotation.x = -Math.PI / 2;
-        f2_4.position.set(25.5, 5.01, 17.5);
+        f2_4.position.set(25.5, 5.1, 17.5);
         f2_4.receiveShadow = true;
         scene.add(f2_4);
 
@@ -1247,7 +1247,7 @@ function init() {
         // Helper for 2nd floor walls
         function addWall2(x, z, w, d) {
             const wall = new THREE.Mesh(wallGeo, wallMat);
-            wall.position.set(x, 5 + CONFIG.wallHeight / 2, z);
+            wall.position.set(x, 5.1 + CONFIG.wallHeight / 2, z);
             wall.scale.set(w, 1, d);
             wall.castShadow = true;
             wall.receiveShadow = true;
@@ -1286,7 +1286,7 @@ function init() {
         const tableGeo = new THREE.BoxGeometry(3, 1, 2);
         const tableMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
         const table = new THREE.Mesh(tableGeo, tableMat);
-        table.position.set(0, 5 + 0.5, 10); // y=5 is floor, +0.5 for half table height
+        table.position.set(0, 5.1 + 0.5, 10); // y=5.1 is floor, +0.5 for half table height
         scene.add(table);
         state.obstacles.push(new THREE.Box3().setFromObject(table));
 
@@ -1455,12 +1455,12 @@ function init() {
         // Create two podcast headphones on the table
         // Create two podcast headphones on the table
         const podcastBrightcoveUrl = 'https://players.brightcove.net/1050888054001/default_default/index.html?videoId=6388672410112&autoplay=true&playsinline=true';
-        createHeadphones(-0.8, 6.0, 10, podcastBrightcoveUrl, 'WirtschaftsWoche Podcast');
-        createHeadphones(0.8, 6.0, 10, podcastBrightcoveUrl, 'WirtschaftsWoche Podcast');
+        createHeadphones(-0.8, 6.1, 10, podcastBrightcoveUrl, 'WirtschaftsWoche Podcast');
+        createHeadphones(0.8, 6.1, 10, podcastBrightcoveUrl, 'WirtschaftsWoche Podcast');
 
         // Table in Room 2 Upper (East) for Remote
         const table2 = new THREE.Mesh(tableGeo, tableMat);
-        table2.position.set(20, 5 + 0.5, 10); // y=5 is floor, +0.5 for half table height
+        table2.position.set(20, 5.1 + 0.5, 10); // y=5.1 is floor, +0.5 for half table height
         scene.add(table2);
         state.obstacles.push(new THREE.Box3().setFromObject(table2));
 
@@ -1475,16 +1475,16 @@ function init() {
         });
 
         const westWindow = new THREE.Mesh(windowGeo, windowMat);
-        westWindow.position.set(-10, 7.5, 10);
+        westWindow.position.set(-10, 7.6, 10);
         westWindow.rotation.y = Math.PI / 2;
         scene.add(westWindow);
 
         const northWindow = new THREE.Mesh(windowGeo, windowMat);
-        northWindow.position.set(0, 7.5, 0);
+        northWindow.position.set(0, 7.6, 0);
         scene.add(northWindow);
 
         const southWindow = new THREE.Mesh(windowGeo, windowMat);
-        southWindow.position.set(0, 7.5, 20);
+        southWindow.position.set(0, 7.6, 20);
         scene.add(southWindow);
 
         // Video Thumbnail on South Wall of Room 2 Upper
@@ -1524,7 +1524,7 @@ function init() {
         const remoteGeo = new THREE.BoxGeometry(0.2, 0.05, 0.4);
         const remoteMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
         const remote = new THREE.Mesh(remoteGeo, remoteMat);
-        remote.position.set(20, 6.05, 10);
+        remote.position.set(20, 6.15, 10);
         remote.userData = {
             type: 'remote',
             videoSrc: brightcoveUrl // Brightcove URL
@@ -1539,7 +1539,7 @@ function init() {
         const swBtn = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.05), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
         swBtn.position.z = 0.05;
         swHousing.add(swBtn);
-        swHousing.position.set(29.9, 6.5, 15);
+        swHousing.position.set(29.9, 6.6, 15);
         swHousing.rotation.y = -Math.PI / 2;
         swHousing.userData = { type: 'switch' };
         scene.add(swHousing);
@@ -1660,7 +1660,7 @@ function init() {
         }
 
         // Place treasure chest in northwest corner of Room 1 upper floor - ON THE FLOOR
-        createTreasureChest(-9, 5.0, 1);
+        createTreasureChest(-9, 5.1, 1);
 
         addObstacles();
         placeCovers();
@@ -3108,4 +3108,3 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 });
-
