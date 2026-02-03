@@ -1948,7 +1948,7 @@ function init() {
 
         ctx.fillStyle = '#aaaaaa';
         ctx.font = `${30 * scale}px sans-serif`;
-        ctx.fillText('Einen Moment Geduld ...', width / 2, 550 * scale);
+        ctx.fillText('Ihre Verbindung ist langsam, die Cover laden. Einen Moment Geduld ...', width / 2, 550 * scale);
 
         const canvasTex = new THREE.CanvasTexture(canvas);
         canvasTex.encoding = THREE.sRGBEncoding;
