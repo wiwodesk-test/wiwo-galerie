@@ -12,7 +12,7 @@ const COVERS_DATA = [
         lowRes: "assets/covers/low/cover_01.jpg",
         highRes: "assets/covers/high/cover_01.jpg",
         title: "Nr. 01, 1926",
-        description: "Am 1. Oktober 1946 erscheint die erste Ausgabe der WirtschaftsWoche, damals noch unter dem Namen „Der deutsche Volkswirt“. Aufwendige Titelcover gab es damals noch nicht: Stattdessen wurden die Themen der Woche relativ kryptisch beworben. – Philipp Frohn"
+        description: "Am 1. Oktober 1926 erscheint die erste Ausgabe der WirtschaftsWoche, damals noch unter dem Namen „Der deutsche Volkswirt“. Aufwendige Titelcover gab es damals noch nicht: Stattdessen wurden die Themen der Woche relativ kryptisch beworben. – Philipp Frohn"
     },
     {
         id: 1,
@@ -713,4 +713,5 @@ const COVERS_DATA = [
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = COVERS_DATA;
 }
+
 
