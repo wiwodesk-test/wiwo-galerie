@@ -82,35 +82,35 @@ const COVERS_DATA = [
         lowRes: "assets/covers/low/cover_11.jpg",
         highRes: "assets/covers/high/cover_11.jpg",
         title: "Nr. 35, 1967",
-        description: "Die Titelstory dieser Volkswirt-Ausgabe macht klar: Der Digitalisierungsrückstand unserer Behörden hat sich schon früh abgezeichnet. Von den mehr als 2.500 damals in der Bundesrepublik installierten Computern standen nur etwa 300 bei öffentlichen Verwaltungen – und das oft vor allem aus Prestige und ohne echte Anbindung. Das Zitat eines damaligen Bundesbeamten kommt einem vertraut vor: „Unser Rückstand in der EDV-Technik ist nicht so schlimm wie unser Rückstand im Denken.“ – Martin Gehlen"
+        description: "Die westdeutsche Wirtschaft hatte mehr als ein Jahrzehnt Wachstum hinter sich, dann brach die Konjunktur ein. Der Wirtschaftsjournalist Karl Otto Pöhl analysierte die Gegenmaßnahmen und befand: „Es bedurfte offenbar einer großen Koalition, um ein antizyklisches Finanzprogramm mit entsprechender staatlicher Verschuldung durchzusetzen.“ Die Bundesbank hatte Zweifel an der Expansionspolitik. Pöhl kritisierte sie dafür. Viele Jahre später konnte er es als Präsident des Instituts besser machen. – Martin Gehlen"
     },
     {
         id: 11,
         lowRes: "assets/covers/low/cover_12.jpg",
         highRes: "assets/covers/high/cover_12.jpg",
         title: "Nr. 14, 1968",
-        description: "Ein Fahndungsfoto? Zumindest nach einer der beiden Titelfiguren wurde in gewissem Sinne gesucht: Seit Ludwig Erhard 1966 als Bundeskanzler zurückgetreten war, fehlte den Unionsparteien „ein profilierter Repräsentant ihres wirtschaftspolitischen Kurses“, wie „Der Volkswirt“ schrieb. Der Wirtschaftsrat der CDU versuchte, Einfluss auf die Besetzung dieser Leerstelle zu nehmen. Im Jahr 2026 mahnt der Verein eine „beherzte“ Sozialstaatsreform an: Es sei absurd, dass derzeit „an bestimmten Sprungstellen ein höherer Arbeitslohn nicht in einem höheren Einkommen resultiert“. – Martin Gehlen"
+        description: "Ein Finanzblatt, das mit einem Pin-up-Girl aufmacht? Ja, es geht um das Jahr 1968. Wer sich von dem Foto lösen konnte, erfuhr im Titelstück von dem natürlich rein sachlichen Themenbezug: Der Reisemarkt hatte das junge Publikum als neue „Käuferreserve“ ausgemacht – für Flugreisen nach Mallorca, kaum teurer als eine Bahnfahrt an die Nordsee.  – Martin Gehlen"
     },
     {
         id: 12,
         lowRes: "assets/covers/low/cover_13.jpg",
         highRes: "assets/covers/high/cover_13.jpg",
         title: "Nr. 15, 1968",
-        description: "Ein Finanzblatt, das mit einem Pin-up-Girl aufmacht? Ja, es geht um das Jahr 1968. Wer sich von dem Foto lösen konnte, erfuhr im Titelstück von dem natürlich rein sachlichen Themenbezug: Der Reisemarkt hatte das junge Publikum als neue „Käuferreserve“ ausgemacht – für Flugreisen nach Mallorca, kaum teurer als eine Bahnfahrt an die Nordsee. Kunst des Arrangierens“ sei der Erfolg nicht denkbar. Als Kronzeugen zitierte der Autor einen italienischen Rechtsanwalt: Korruption sei nur eine „Begleiterscheinung des Wirtschaftswunders“, die dem Zeitdruck des schnellen Wachstums geschuldet sei. – Martin Gehlen"
+        description: "Mit Anerkennung schaute man im „Volkswirt“ auf die gute Bilanz der italienischen Wirtschaft. Es mischte sich aber auch Argwohn bei: Ohne die „südländische Kunst des Arrangierens“ sei der Erfolg nicht denkbar. Als Kronzeugen zitierte der Autor einen italienischen Rechtsanwalt: Korruption sei nur eine „Begleiterscheinung des Wirtschaftswunders“, die dem Zeitdruck des schnellen Wachstums geschuldet sei. – Martin Gehlen"
     },
     {
         id: 13,
         lowRes: "assets/covers/low/cover_14.jpg",
         highRes: "assets/covers/high/cover_14.jpg",
         title: "Nr. 38, 1968",
-        description: "Mit Anerkennung schaute man im „Volkswirt“ auf die gute Bilanz der italienischen Wirtschaft. Es mischte sich aber auch Argwohn bei: Ohne die „südländische entfernt von "ausgebucht", aber auch in linearen TV-Sendern lief zuletzt weniger Werbung. Netflix hingegen glänzt mit stetig steigenden Nutzerzahlen und entsprechenden Einkünften. – Martin Gehlen"
+        description: "Der Strukturwandel und seine Folgen gaben immer wieder Anlass für Titelgeschichten – auch in Bezug auf das eigene Mediengeschäft. Das öffentlich-rechtliche Fernsehen galt 1969 noch als Newcomer und grub den etablierten Printmedien Werbeerlöse ab. Inzwischen sind wir in der gefühlt fünfundzwanzigsten Staffel dieser Serie: Printmedien sind weit entfernt von „ausgebucht“, aber auch in linearen TV-Sendern lief zuletzt weniger Werbung. Netflix hingegen glänzt mit stetig steigenden Nutzerzahlen und entsprechenden Einkünften. – Martin Gehlen"
     },
     {
         id: 14,
         lowRes: "assets/covers/low/cover_15.jpg",
         highRes: "assets/covers/high/cover_15.jpg",
         title: "Nr. 04, 1968",
-        description: "Der Strukturwandel und seine Folgen gaben immer wieder Anlass für Titelgeschichten – auch in Bezug auf das eigene Mediengeschäft. Das öffentlich-rechtliche Fernsehen galt 1969 noch als Newcomer und grub den etablierten Printmedien Werbeerlöse ab. Inzwischen sind wir in der gefühlt fünfundzwanzigsten Staffel dieser Serie. – Martin Gehlen"
+        description: "Ein Fahndungsfoto? Zumindest nach einer der beiden Titelfiguren wurde in gewissem Sinne gesucht: Seit Ludwig Erhard 1966 als Bundeskanzler zurückgetreten war, fehlte den Unionsparteien „ein profilierter Repräsentant ihres wirtschaftspolitischen Kurses“, wie „Der Volkswirt“ schrieb. Der Wirtschaftsrat der CDU versuchte, Einfluss auf die Besetzung dieser Leerstelle zu nehmen. Aktuell mahnt der Verein eine „beherzte“ Sozialstaatsreform an: Es sei absurd, dass derzeit „an bestimmten Sprungstellen ein höherer Arbeitslohn nicht in einem höheren Einkommen resultiert“. – Martin Gehlen"
     },
     {
         id: 15,
@@ -193,8 +193,8 @@ const COVERS_DATA = [
         id: 26,
         lowRes: "assets/covers/low/cover_27.jpg",
         highRes: "assets/covers/high/cover_27.jpg",
-        title: "Nr. 43, 1976",
-        description: "An dieser Ausgabe ist vor allem das Cover besonders. Künstler Joseph Beuys posierte mit zwei Wanderstöcken. Eine limitierte Version des Fotos von Dieter Schwille wurde als Lithografie verbreitet – ein Exemplar schaffte es in die Tate Gallery in London."
+        title: "Nr. 25, 1977",
+        description: "Heute sind sie aus keinem Büro mehr wegzudenken, damals wurden sie „Arbeitsplatzkiller“ genannt: 1977 kommt der erste Heimcomputer auf den Markt. Wie bei vielen neuen Technologien befürchtet man, dass Arbeitsplätze dadurch abgebaut werden. Ganz pessimistische Stimmen gehen sogar von einem Verlust von 80 Prozent über die nächsten 20 Jahre aus. So schlimm kam es dann doch nicht: zwar wurden Arbeitsplätze abgebaut, doch es kamen pro Jahr mehr dazu als verloren gingen. – Anna Lauterjung"
     },
     {
         id: 27,
@@ -698,7 +698,7 @@ const COVERS_DATA = [
         lowRes: "assets/covers/low/cover_99.jpg",
         highRes: "assets/covers/high/cover_99.jpg",
         title: "Nr. 30, 2025",
-        description: "Bei allen Negativmeldungen bedarf es auch positien Nachrichten. Die deutsche Autoindustrie macht es den Konkurrenten aus China eben doch noch bei manchen Themen vor. – Celine Imensek"
+        description: "Bei allen Negativmeldungen bedarf es auch positiven Nachrichten. Die deutsche Autoindustrie macht es den Konkurrenten aus China eben doch noch bei manchen Themen vor. – Celine Imensek"
     },
     {
         id: 99,
@@ -713,3 +713,4 @@ const COVERS_DATA = [
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = COVERS_DATA;
 }
+
