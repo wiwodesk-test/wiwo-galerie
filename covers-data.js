@@ -75,42 +75,42 @@ const COVERS_DATA = [
         lowRes: "assets/covers/low/cover_10.jpg",
         highRes: "assets/covers/high/cover_10.jpg",
         title: "Nr. 27, 1967",
-        description: "Die Titelstory dieser Volkswirt-Ausgabe macht klar: Der Digitalisierungsrückstand unserer Behörden hat sich schon früh abgezeichnet. Von den mehr als 2.500 damals in der Bundesrepublik installierten Computern standen nur etwa 300 bei öffentlichen Verwaltungen – und das oft vor allem aus Prestige und ohne echte Anbindung. Das Zitat eines damaligen Bundesbeamten kommt einem vertraut vor: „Unser Rückstand in der EDV-Technik ist nicht so schlimm wie unser Rückstand im Denken.“ – Martin Gehlen"
+        description: "Die westdeutsche Wirtschaft hatte mehr als ein Jahrzehnt Wachstum hinter sich, dann brach die Konjunktur ein. Der Wirtschaftsjournalist Karl Otto Pöhl analysierte die Gegenmaßnahmen und befand: „Es bedurfte offenbar einer großen Koalition, um ein antizyklisches Finanzprogramm mit entsprechender staatlicher Verschuldung durchzusetzen.“ Die Bundesbank hatte Zweifel an der Expansionspolitik. Pöhl kritisierte sie dafür. Viele Jahre später konnte er es als Präsident des Instituts besser machen. – Martin Gehlen"
     },
     {
         id: 10,
         lowRes: "assets/covers/low/cover_11.jpg",
         highRes: "assets/covers/high/cover_11.jpg",
         title: "Nr. 35, 1967",
-        description: "Die westdeutsche Wirtschaft hatte mehr als ein Jahrzehnt Wachstum hinter sich, dann brach die Konjunktur ein. Der Wirtschaftsjournalist Karl Otto Pöhl analysierte die Gegenmaßnahmen und befand: „Es bedurfte offenbar einer großen Koalition, um ein antizyklisches Finanzprogramm mit entsprechender staatlicher Verschuldung durchzusetzen.“ Die Bundesbank hatte Zweifel an der Expansionspolitik. Pöhl kritisierte sie dafür. Viele Jahre später konnte er es als Präsident des Instituts besser machen. – Martin Gehlen"
+        description: "Die Titelstory dieser Volkswirt-Ausgabe macht klar: Der Digitalisierungsrückstand unserer Behörden hat sich schon früh abgezeichnet. Von den mehr als 2.500 damals in der Bundesrepublik installierten Computern standen nur etwa 300 bei öffentlichen Verwaltungen – und das oft vor allem aus Prestige und ohne echte Anbindung. Das Zitat eines damaligen Bundesbeamten kommt einem vertraut vor: „Unser Rückstand in der EDV-Technik ist nicht so schlimm wie unser Rückstand im Denken.“ – Martin Gehlen"
     },
     {
         id: 11,
         lowRes: "assets/covers/low/cover_12.jpg",
         highRes: "assets/covers/high/cover_12.jpg",
         title: "Nr. 14, 1968",
-        description: "Ein Finanzblatt, das mit einem Pin-up-Girl aufmacht? Ja, es geht um das Jahr 1968. Wer sich von dem Foto lösen konnte, erfuhr im Titelstück von dem natürlich rein sachlichen Themenbezug: Der Reisemarkt hatte das junge Publikum als neue „Käuferreserve“ ausgemacht – für Flugreisen nach Mallorca, kaum teurer als eine Bahnfahrt an die Nordsee.  – Martin Gehlen"
+        description: "Ein Fahndungsfoto? Zumindest nach einer der beiden Titelfiguren wurde in gewissem Sinne gesucht: Seit Ludwig Erhard 1966 als Bundeskanzler zurückgetreten war, fehlte den Unionsparteien „ein profilierter Repräsentant ihres wirtschaftspolitischen Kurses“, wie „Der Volkswirt“ schrieb. Der Wirtschaftsrat der CDU versuchte, Einfluss auf die Besetzung dieser Leerstelle zu nehmen. Aktuell mahnt der Verein eine „beherzte“ Sozialstaatsreform an: Es sei absurd, dass derzeit „an bestimmten Sprungstellen ein höherer Arbeitslohn nicht in einem höheren Einkommen resultiert“. – Martin Gehlen"
     },
     {
         id: 12,
         lowRes: "assets/covers/low/cover_13.jpg",
         highRes: "assets/covers/high/cover_13.jpg",
         title: "Nr. 15, 1968",
-        description: "Mit Anerkennung schaute man im „Volkswirt“ auf die gute Bilanz der italienischen Wirtschaft. Es mischte sich aber auch Argwohn bei: Ohne die „südländische Kunst des Arrangierens“ sei der Erfolg nicht denkbar. Als Kronzeugen zitierte der Autor einen italienischen Rechtsanwalt: Korruption sei nur eine „Begleiterscheinung des Wirtschaftswunders“, die dem Zeitdruck des schnellen Wachstums geschuldet sei. – Martin Gehlen"
+        description: "Ein Finanzblatt, das mit einem Pin-up-Girl aufmacht? Ja, es geht um das Jahr 1968. Wer sich von dem Foto lösen konnte, erfuhr im Titelstück von dem natürlich rein sachlichen Themenbezug: Der Reisemarkt hatte das junge Publikum als neue „Käuferreserve“ ausgemacht – für Flugreisen nach Mallorca, kaum teurer als eine Bahnfahrt an die Nordsee. Kunst des Arrangierens“ sei der Erfolg nicht denkbar. Als Kronzeugen zitierte der Autor einen italienischen Rechtsanwalt: Korruption sei nur eine „Begleiterscheinung des Wirtschaftswunders“, die dem Zeitdruck des schnellen Wachstums geschuldet sei. – Martin Gehlen"
     },
     {
         id: 13,
         lowRes: "assets/covers/low/cover_14.jpg",
         highRes: "assets/covers/high/cover_14.jpg",
         title: "Nr. 38, 1968",
-        description: "Der Strukturwandel und seine Folgen gaben immer wieder Anlass für Titelgeschichten – auch in Bezug auf das eigene Mediengeschäft. Das öffentlich-rechtliche Fernsehen galt 1969 noch als Newcomer und grub den etablierten Printmedien Werbeerlöse ab. Inzwischen sind wir in der gefühlt fünfundzwanzigsten Staffel dieser Serie: Printmedien sind weit entfernt von „ausgebucht“, aber auch in linearen TV-Sendern lief zuletzt weniger Werbung. Netflix hingegen glänzt mit stetig steigenden Nutzerzahlen und entsprechenden Einkünften. – Martin Gehlen"
+        description: "Mit Anerkennung schaute man im „Volkswirt“ auf die gute Bilanz der italienischen Wirtschaft. Es mischte sich aber auch Argwohn bei: Ohne die „südländische Kunst des Arrangierens“ sei der Erfolg nicht denkbar. Als Kronzeugen zitierte der Autor einen italienischen Rechtsanwalt: Korruption sei nur eine „Begleiterscheinung des Wirtschaftswunders“, die dem Zeitdruck des schnellen Wachstums geschuldet sei. – Martin Gehlen"
     },
     {
         id: 14,
         lowRes: "assets/covers/low/cover_15.jpg",
         highRes: "assets/covers/high/cover_15.jpg",
         title: "Nr. 04, 1968",
-        description: "Ein Fahndungsfoto? Zumindest nach einer der beiden Titelfiguren wurde in gewissem Sinne gesucht: Seit Ludwig Erhard 1966 als Bundeskanzler zurückgetreten war, fehlte den Unionsparteien „ein profilierter Repräsentant ihres wirtschaftspolitischen Kurses“, wie „Der Volkswirt“ schrieb. Der Wirtschaftsrat der CDU versuchte, Einfluss auf die Besetzung dieser Leerstelle zu nehmen. Aktuell mahnt der Verein eine „beherzte“ Sozialstaatsreform an: Es sei absurd, dass derzeit „an bestimmten Sprungstellen ein höherer Arbeitslohn nicht in einem höheren Einkommen resultiert“. – Martin Gehlen"
+        description: "Der Strukturwandel und seine Folgen gaben immer wieder Anlass für Titelgeschichten – auch in Bezug auf das eigene Mediengeschäft. Das öffentlich-rechtliche Fernsehen galt 1969 noch als Newcomer und grub den etablierten Printmedien Werbeerlöse ab. Inzwischen sind wir in der gefühlt fünfundzwanzigsten Staffel dieser Serie. – Martin Gehlen"
     },
     {
         id: 15,
@@ -186,8 +186,8 @@ const COVERS_DATA = [
         id: 25,
         lowRes: "assets/covers/low/cover_26.jpg",
         highRes: "assets/covers/high/cover_26.jpg",
-        title: "Nr. 02, 1976",
-        description: "Obwohl die WirtschaftsWoche so heißt, wie sie heißt, hat sie sich nicht immer nur mit harten Wirtschaftsthemen beschäftigt. Ein Beispiel dafür ist dieses Cover aus der Mitte der 1970er-Jahre. Damals finden im Februar 1976 die Olympischen Winterspiele in Österreich statt und ganz Deutschland ist im Ski-Fieber. Und natürlich muss die WirtschaftsWoche darüber berichten, wo man die besten Pisten findet. – Anna Lauterjung"
+        title: "Nr. 43, 1976",
+        description: "An dieser Ausgabe ist vor allem das Cover besonders. Künstler Joseph Beuys posierte mit zwei Wanderstöcken. Eine limitierte Version des Fotos von Dieter Schwille wurde als Lithografie verbreitet – ein Exemplar schaffte es in die Tate Gallery in London."
     },
     {
         id: 26,
@@ -415,80 +415,80 @@ const COVERS_DATA = [
     },
     {
         id: 58,
+        lowRes: "assets/covers/low/cover_69.jpg",
+        highRes: "assets/covers/high/cover_69.jpg",
+        title: "Nr. 29, 2006",
+        description: "Effizienz wird zur neuen Ingenieurdisziplin, nicht unbedingt aus Idealismus, sondern aus ökonomischem Druck. Der Hybridantrieb folgt als pragmatische Antwort auf teure Energie und verschärften Wettbewerb. – Tiffany Peach"
+    },
+    {
+        id: 59,
         lowRes: "assets/covers/low/cover_59.jpg",
         highRes: "assets/covers/high/cover_59.jpg",
         title: "Nr. 38, 2000",
         description: "Ein rapider Ölpreisanstieg nach jahrelang niedrigen Preisen machte Energie um die Jahrtausendwende wieder zum zentralen ökonomischen Risikofaktor – und warf die Frage auf, wer von teurer Energie profitiert und wer die Kosten trägt. – Tiffany Peach"
     },
     {
-        id: 59,
+        id: 60,
         lowRes: "assets/covers/low/cover_60.jpg",
         highRes: "assets/covers/high/cover_60.jpg",
         title: "Nr. 18, 2000",
         description: "Online-Shopping als Verlockung und Zukunftsversprechen, gezeichnet im Überschwang der Dotcom-Ära. – Tiffany Peach"
     },
     {
-        id: 60,
+        id: 61,
         lowRes: "assets/covers/low/cover_61.jpg",
         highRes: "assets/covers/high/cover_61.jpg",
         title: "Nr. 17, 2001",
         description: "Sparwelle: Ein Cover das mit demonstrativer Leere die beginnende Sparwelle nach dem Platzen der Dotcom-Blase sichtbar machte. – Tiffany Peach"
     },
     {
-        id: 61,
+        id: 62,
         lowRes: "assets/covers/low/cover_62.jpg",
         highRes: "assets/covers/high/cover_62.jpg",
         title: "Nr. 38, 2001",
         description: "Wenige Tage nach den Terroranschlägen vom 11. September kann die Welt das Ausmaß der Gewalt noch immer nicht begreifen – ebenso schwierig ist es die wirtschaftlichen Folgen einzuordnen.  – Tiffany Peach"
     },
     {
-        id: 62,
+        id: 63,
         lowRes: "assets/covers/low/cover_63.jpg",
         highRes: "assets/covers/high/cover_63.jpg",
         title: "Nr. 51, 2002",
         description: "Ein provokantes WiWo-Cover aus dem Jahr 2002, das vor dem Hintergrund der EU-Beitrittsdebatte um die Türkei die Frage nach Europas politischen und kulturellen Grenzen zuspitzte. – Tiffany Peach"
     },
     {
-        id: 63,
+        id: 64,
         lowRes: "assets/covers/low/cover_64.jpg",
         highRes: "assets/covers/high/cover_64.jpg",
         title: "Nr. 10, 2003",
         description: "Was gibt es da zu lachen? Über die produktive Kraft des Humors – als Ventil, Denköffner und Überlebensstrategie in wirtschaftlich und gesellschaftlich schweren Zeiten. – Tiffany Peach"
     },
     {
-        id: 64,
+        id: 65,
         lowRes: "assets/covers/low/cover_65.jpg",
         highRes: "assets/covers/high/cover_65.jpg",
         title: "Nr. 14, 2003",
         description: "Was 2003 noch als provokante Analyse erschien, liest sich heute fast wie eine Dauerfrage der Weltwirtschaft – angesichts florierender Rüstungsaktien und einer Konjunktur im permanenten Krisenmodus. – Tiffany Peach"
     },
     {
-        id: 65,
+        id: 66,
         lowRes: "assets/covers/low/cover_66.jpg",
         highRes: "assets/covers/high/cover_66.jpg",
         title: "Nr. 32, 2004",
         description: "Ritt ohne Risiko: Dieses WiWo-Cover griff die aufgeheizte Debatte um Spitzengehälter auf und kam zu dem nüchternen Befund, dass die Vergütung im internationalen Vergleich vielleicht nicht zu hoch, aber auffällig risikoarm strukturiert ist – mit viel Fixgehalt und wenig echter Leistungsbindung. – Tiffany Peach"
     },
     {
-        id: 66,
+        id: 67,
         lowRes: "assets/covers/low/cover_67.jpg",
         highRes: "assets/covers/high/cover_67.jpg",
         title: "Nr. 42, 2005",
         description: "Angela Merkel stehen die Haare zu Berge: 2011 verpasste der Autovermieter Sixt ihr in einer Cabrio-Werbekampagne demonstrativ eine Sturmfrisur. Merkel nahm das gelassen – und die WirtschaftsWoche machte daraus ein Cover über ihre „Politik des Weiter so“. Gute Fahrt! – Tiffany Peach"
     },
     {
-        id: 67,
+        id: 68,
         lowRes: "assets/covers/low/cover_68.jpg",
         highRes: "assets/covers/high/cover_68.jpg",
         title: "Nr. 21, 2006",
         description: "Cover gingen bei der WirtschaftsWoche auch extravagant. – Celine Imensek"
-    },
-    {
-        id: 68,
-        lowRes: "assets/covers/low/cover_69.jpg",
-        highRes: "assets/covers/high/cover_69.jpg",
-        title: "Nr. 29, 2006",
-        description: "Effizienz wird zur neuen Ingenieurdisziplin, nicht unbedingt aus Idealismus, sondern aus ökonomischem Druck. Der Hybridantrieb folgt als pragmatische Antwort auf teure Energie und verschärften Wettbewerb. – Tiffany Peach"
     },
     {
         id: 69,
@@ -713,4 +713,5 @@ const COVERS_DATA = [
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = COVERS_DATA;
 }
+
 
