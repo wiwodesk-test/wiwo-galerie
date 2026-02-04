@@ -415,80 +415,80 @@ const COVERS_DATA = [
     },
     {
         id: 58,
-        lowRes: "assets/covers/low/cover_69.jpg",
-        highRes: "assets/covers/high/cover_69.jpg",
-        title: "Nr. 29, 2006",
-        description: "Effizienz wird zur neuen Ingenieurdisziplin, nicht unbedingt aus Idealismus, sondern aus ökonomischem Druck. Der Hybridantrieb folgt als pragmatische Antwort auf teure Energie und verschärften Wettbewerb. – Tiffany Peach"
-    },
-    {
-        id: 59,
         lowRes: "assets/covers/low/cover_59.jpg",
         highRes: "assets/covers/high/cover_59.jpg",
         title: "Nr. 38, 2000",
         description: "Ein rapider Ölpreisanstieg nach jahrelang niedrigen Preisen machte Energie um die Jahrtausendwende wieder zum zentralen ökonomischen Risikofaktor – und warf die Frage auf, wer von teurer Energie profitiert und wer die Kosten trägt. – Tiffany Peach"
     },
     {
-        id: 60,
+        id: 59,
         lowRes: "assets/covers/low/cover_60.jpg",
         highRes: "assets/covers/high/cover_60.jpg",
         title: "Nr. 18, 2000",
         description: "Online-Shopping als Verlockung und Zukunftsversprechen, gezeichnet im Überschwang der Dotcom-Ära. – Tiffany Peach"
     },
     {
-        id: 61,
+        id: 60,
         lowRes: "assets/covers/low/cover_61.jpg",
         highRes: "assets/covers/high/cover_61.jpg",
         title: "Nr. 17, 2001",
         description: "Sparwelle: Ein Cover das mit demonstrativer Leere die beginnende Sparwelle nach dem Platzen der Dotcom-Blase sichtbar machte. – Tiffany Peach"
     },
     {
-        id: 62,
+        id: 61,
         lowRes: "assets/covers/low/cover_62.jpg",
         highRes: "assets/covers/high/cover_62.jpg",
         title: "Nr. 38, 2001",
         description: "Wenige Tage nach den Terroranschlägen vom 11. September kann die Welt das Ausmaß der Gewalt noch immer nicht begreifen – ebenso schwierig ist es die wirtschaftlichen Folgen einzuordnen.  – Tiffany Peach"
     },
     {
-        id: 63,
+        id: 62,
         lowRes: "assets/covers/low/cover_63.jpg",
         highRes: "assets/covers/high/cover_63.jpg",
         title: "Nr. 51, 2002",
         description: "Ein provokantes WiWo-Cover aus dem Jahr 2002, das vor dem Hintergrund der EU-Beitrittsdebatte um die Türkei die Frage nach Europas politischen und kulturellen Grenzen zuspitzte. – Tiffany Peach"
     },
     {
-        id: 64,
+        id: 63,
         lowRes: "assets/covers/low/cover_64.jpg",
         highRes: "assets/covers/high/cover_64.jpg",
         title: "Nr. 10, 2003",
         description: "Was gibt es da zu lachen? Über die produktive Kraft des Humors – als Ventil, Denköffner und Überlebensstrategie in wirtschaftlich und gesellschaftlich schweren Zeiten. – Tiffany Peach"
     },
     {
-        id: 65,
+        id: 64,
         lowRes: "assets/covers/low/cover_65.jpg",
         highRes: "assets/covers/high/cover_65.jpg",
         title: "Nr. 14, 2003",
         description: "Was 2003 noch als provokante Analyse erschien, liest sich heute fast wie eine Dauerfrage der Weltwirtschaft – angesichts florierender Rüstungsaktien und einer Konjunktur im permanenten Krisenmodus. – Tiffany Peach"
     },
     {
-        id: 66,
+        id: 65,
         lowRes: "assets/covers/low/cover_66.jpg",
         highRes: "assets/covers/high/cover_66.jpg",
         title: "Nr. 32, 2004",
         description: "Ritt ohne Risiko: Dieses WiWo-Cover griff die aufgeheizte Debatte um Spitzengehälter auf und kam zu dem nüchternen Befund, dass die Vergütung im internationalen Vergleich vielleicht nicht zu hoch, aber auffällig risikoarm strukturiert ist – mit viel Fixgehalt und wenig echter Leistungsbindung. – Tiffany Peach"
     },
     {
-        id: 67,
+        id: 66,
         lowRes: "assets/covers/low/cover_67.jpg",
         highRes: "assets/covers/high/cover_67.jpg",
         title: "Nr. 42, 2005",
         description: "Angela Merkel stehen die Haare zu Berge: 2011 verpasste der Autovermieter Sixt ihr in einer Cabrio-Werbekampagne demonstrativ eine Sturmfrisur. Merkel nahm das gelassen – und die WirtschaftsWoche machte daraus ein Cover über ihre „Politik des Weiter so“. Gute Fahrt! – Tiffany Peach"
     },
     {
-        id: 68,
+        id: 67,
         lowRes: "assets/covers/low/cover_68.jpg",
         highRes: "assets/covers/high/cover_68.jpg",
         title: "Nr. 21, 2006",
         description: "Cover gingen bei der WirtschaftsWoche auch extravagant. – Celine Imensek"
+    },
+    {
+        id: 68,
+        lowRes: "assets/covers/low/cover_69.jpg",
+        highRes: "assets/covers/high/cover_69.jpg",
+        title: "Nr. 29, 2006",
+        description: "Effizienz wird zur neuen Ingenieurdisziplin, nicht unbedingt aus Idealismus, sondern aus ökonomischem Druck. Der Hybridantrieb folgt als pragmatische Antwort auf teure Energie und verschärften Wettbewerb. – Tiffany Peach"
     },
     {
         id: 69,
