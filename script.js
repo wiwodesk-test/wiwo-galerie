@@ -53,7 +53,13 @@ function loadCoversFromCSV() {
 
 // Start loading CSV immediately
 // loadCoversFromCSV(); // Data is now pre-loaded in covers-data.js
-console.log('✅ Covers successfully loaded from static data file');
+if (typeof COVERS_DATA !== 'undefined') {
+    console.log('✅ Covers successfully loaded from static data file. Total items:', COVERS_DATA.length);
+    console.log('   Sample Item (ID 0):', COVERS_DATA[0]);
+    console.log('   Sample Item (ID 58):', COVERS_DATA.find(c => c.id === 58));
+} else {
+    console.error('❌ COVERS_DATA is undefined! covers-data.js failed to load or parse.');
+}
 
 const state = {
     viewedCovers: new Set(),
@@ -100,6 +106,24 @@ const state = {
     lastAchievementClosed: 0, // Timestamp to prevent immediate interaction after closing achievement
     treasureOpened: false // Flag to prevent treasure chest from auto-reopening
 };
+
+// Click tracking function for Google Tag Manager
+function trackClick(clickClass, clickText) {
+    // Ensure dataLayer exists
+    window.dataLayer = window.dataLayer || [];
+
+    // Push tracking data to GTM
+    window.dataLayer.push({
+        'event': 'interaction',
+        'clickId': 'interaction-prompt',
+        'clickClass': clickClass,
+        'clickText': clickText
+    });
+
+    // Also log to console for debugging
+    console.log('📊 Track Click:', { id: 'interaction-prompt', class: clickClass, text: clickText });
+}
+
 
 function unlockAchievement(id) {
     if (state.achievements[id]) return; // Already unlocked
@@ -156,6 +180,7 @@ function unlockAchievement(id) {
 
     // Special handling for achievements with custom screens
     if (id === 'lightFound') {
+        trackClick('goal', 'Lichtschalter gefunden');
         const lightScreen = document.getElementById('light-success-screen');
         if (lightScreen) {
             lightScreen.classList.remove('hidden');
@@ -164,6 +189,7 @@ function unlockAchievement(id) {
     }
 
     if (id === 'fiveCoversOpened') {
+        trackClick('goal', 'Fünf Cover betrachtet');
         const fiveCoversScreen = document.getElementById('five-covers-screen');
         if (fiveCoversScreen) {
             fiveCoversScreen.classList.remove('hidden');
@@ -172,6 +198,7 @@ function unlockAchievement(id) {
     }
 
     if (id === 'floorFound') {
+        trackClick('goal', '1. Etage erreicht!');
         const floorScreen = document.getElementById('floor-success-screen');
         if (floorScreen) {
             floorScreen.classList.remove('hidden');
@@ -180,11 +207,13 @@ function unlockAchievement(id) {
     }
 
     if (id === 'treasureFound') {
+        trackClick('goal', 'Schatztruhe geöffnet');
         // Handled by checkInteraction showing #treasure-screen
         return;
     }
 
     if (id === 'allCoversOpened') {
+        trackClick('goal', 'Alle Titelseiten betrachtet!');
         // Show final screen
         const finalScreen = document.getElementById('final-screen');
         if (finalScreen) {
@@ -194,6 +223,7 @@ function unlockAchievement(id) {
     }
 
     if (id === 'firstFound') {
+        trackClick('goal', 'Erstausgabe gefunden!');
         // Show achievement screen for first cover
         const achievementScreen = document.getElementById('achievement-screen');
         if (achievementScreen) {
@@ -330,6 +360,7 @@ function hideLoadingScreen() {
 }
 
 function startExperience() {
+    trackClick('button', 'Starten');
     state.experienceStarted = true;
     const welcomeScreen = document.getElementById('welcome-screen');
     const uiLayer = document.getElementById('ui-layer');
@@ -1965,20 +1996,30 @@ function init() {
             const loader = state.lazyTextureLoader;
 
             const loadTexture = () => {
-                loader.load(imagePath, (t) => {
-                    t.encoding = THREE.sRGBEncoding;
-                    t.flipY = true;
+                loader.load(
+                    imagePath,
+                    (t) => {
+                        // Success
+                        t.encoding = THREE.sRGBEncoding;
+                        t.flipY = true;
 
-                    // If a material was passed, update it directly
-                    if (material) {
-                        material.map = t;
-                        material.needsUpdate = true;
+                        // If a material was passed, update it directly
+                        if (material) {
+                            material.map = t;
+                            material.needsUpdate = true;
+                        }
+                    },
+                    undefined, // onProgress
+                    (err) => {
+                        // Error
+                        console.error(`❌ Failed to load texture for ID ${index}: ${imagePath}`, err);
                     }
-                });
+                );
             };
 
             loadTexture();
-
+        } else {
+            if (index < 20) console.warn(`⚠️ No cover data found for ID ${index} (COVERS_DATA[${index}] is undefined)`);
         }
 
         return canvasTex;
@@ -2156,6 +2197,13 @@ function init() {
     }
 
     function openOverlay(cover) {
+        const coverIndex = cover.userData.id;
+        const coverData = typeof COVERS_DATA !== 'undefined' && COVERS_DATA[coverIndex];
+        const issueNumber = coverData ? (coverData.id + 1) : (coverIndex + 1); // 1-based issue number
+
+        // Track cover detail view
+        trackClick('coverdetail', `Ausgabe ${issueNumber}`);
+
         state.isOverlayOpen = true;
         state.currentCoverId = cover.userData.id;
 
@@ -2167,8 +2215,6 @@ function init() {
         if (!isIOS && document.exitPointerLock) {
             document.exitPointerLock();
         }
-
-        const coverIndex = cover.userData.id;
 
         // Track that this cover has been opened
         if (!state.openedCovers.has(coverIndex)) {
@@ -2191,8 +2237,6 @@ function init() {
                 state.pendingAchievement = 'allCoversOpened';
             }
         }
-
-        const coverData = typeof COVERS_DATA !== 'undefined' && COVERS_DATA[coverIndex];
 
         // Use custom data if available, otherwise use defaults
         const title = coverData ? coverData.title : `Magazine Issue #${coverIndex + 1}`;
@@ -2882,6 +2926,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const continueBtn = document.getElementById('continue-btn');
     if (continueBtn) {
         continueBtn.addEventListener('click', () => {
+            trackClick('button', 'Weiter');
             const firstSuccessScreen = document.getElementById('first-success-screen');
             if (firstSuccessScreen) {
                 firstSuccessScreen.classList.add('hidden');
@@ -2895,6 +2940,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const achievementContinueBtn = document.getElementById('achievement-continue-btn');
     if (achievementContinueBtn) {
         achievementContinueBtn.addEventListener('click', () => {
+            trackClick('button', 'Weiter');
             const achievementScreen = document.getElementById('achievement-screen');
             if (achievementScreen) {
                 achievementScreen.classList.add('hidden');
@@ -2908,6 +2954,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const treasureContinueBtn = document.getElementById('treasure-continue-btn');
     if (treasureContinueBtn) {
         treasureContinueBtn.addEventListener('click', (e) => {
+            trackClick('button', 'Weiter erkunden');
             if (e) e.stopPropagation();
             const treasureScreen = document.getElementById('treasure-screen');
             if (treasureScreen) {
@@ -2932,6 +2979,7 @@ document.addEventListener('DOMContentLoaded', () => {
         treasureShopBtn.setAttribute('tabindex', '0');
 
         treasureShopBtn.addEventListener('click', (e) => {
+            trackClick('button', 'Zum Shop');
             if (e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -2951,6 +2999,55 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Add click handler for copy discount code button
+    const copyCodeBtn = document.getElementById('copy-code-btn');
+    if (copyCodeBtn) {
+        copyCodeBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const discountCode = document.getElementById('discount-code');
+            if (discountCode) {
+                try {
+                    // Copy to clipboard
+                    await navigator.clipboard.writeText(discountCode.textContent);
+
+                    // Visual feedback
+                    const originalText = copyCodeBtn.textContent;
+                    copyCodeBtn.textContent = '✓ Kopiert!';
+                    copyCodeBtn.style.background = '#4CAF50';
+
+                    // Reset after 2 seconds
+                    setTimeout(() => {
+                        copyCodeBtn.textContent = originalText;
+                        copyCodeBtn.style.background = '#C5A059';
+                    }, 2000);
+                } catch (err) {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = discountCode.textContent;
+                    textArea.style.position = 'fixed';
+                    textArea.style.opacity = '0';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        copyCodeBtn.textContent = '✓ Kopiert!';
+                        copyCodeBtn.style.background = '#4CAF50';
+                        setTimeout(() => {
+                            copyCodeBtn.textContent = 'Kopieren';
+                            copyCodeBtn.style.background = '#C5A059';
+                        }, 2000);
+                    } catch (err2) {
+                        copyCodeBtn.textContent = 'Fehler';
+                    }
+                    document.body.removeChild(textArea);
+                }
+            }
+        });
+    }
+
 
     // Make treasure continue button focusable and add keyboard support
     const treasureContinueBtn2 = document.getElementById('treasure-continue-btn');
@@ -2973,6 +3070,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const finalContinueBtn = document.getElementById('final-continue-btn');
     if (finalContinueBtn) {
         finalContinueBtn.addEventListener('click', () => {
+            trackClick('button', 'Geschafft!');
             const finalScreen = document.getElementById('final-screen');
             if (finalScreen) {
                 finalScreen.classList.add('hidden');
@@ -2986,6 +3084,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const lightContinueBtn = document.getElementById('light-continue-btn');
     if (lightContinueBtn) {
         lightContinueBtn.addEventListener('click', () => {
+            trackClick('button', 'Weiter');
             const screen = document.getElementById('light-success-screen');
             if (screen) {
                 screen.classList.add('hidden');
@@ -2999,6 +3098,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fiveContinueBtn = document.getElementById('five-covers-continue-btn');
     if (fiveContinueBtn) {
         fiveContinueBtn.addEventListener('click', () => {
+            trackClick('button', 'Weiter');
             const screen = document.getElementById('five-covers-screen');
             if (screen) {
                 screen.classList.add('hidden');
@@ -3012,6 +3112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const floorContinueBtn = document.getElementById('floor-continue-btn');
     if (floorContinueBtn) {
         floorContinueBtn.addEventListener('click', () => {
+            trackClick('button', 'Weiter');
             const screen = document.getElementById('floor-success-screen');
             if (screen) {
                 screen.classList.add('hidden');
