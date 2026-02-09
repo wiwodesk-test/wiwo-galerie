@@ -3,11 +3,14 @@
 
 <head>
     <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-KBXFVCHM');</script>
+    <script>(function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            }); var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                    'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-KBXFVCHM');</script>
     <!-- End Google Tag Manager -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -106,8 +109,8 @@
 
 <body>
     <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KBXFVCHM"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KBXFVCHM" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
     <wiwo-theme-wiwo theme-mode="dark">
         <!-- Loading Screen -->
@@ -273,9 +276,14 @@
                 </wiwo-lead-text>
                 <br>
                 <div
-                    style="background: rgba(197, 160, 89, 0.2); padding: 15px; border: 1px solid #C5A059; margin-bottom: 20px; display: inline-block;">
-                    <span
-                        style="font-family: monospace; font-size: 1.5rem; color: #fff; letter-spacing: 2px;">WiWo_100</span>
+                    style="background: rgba(197, 160, 89, 0.2); padding: 15px; border: 1px solid #C5A059; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 15px;">
+                    <span id="discount-code"
+                        style="font-family: monospace; font-size: 1.5rem; color: #fff; letter-spacing: 2px; user-select: all; cursor: text;">WiWo_100</span>
+                    <button id="copy-code-btn"
+                        style="background: #C5A059; color: #111; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s;"
+                        onmouseover="this.style.background='#d4af68'" onmouseout="this.style.background='#C5A059'">
+                        Kopieren
+                    </button>
                 </div>
                 <br>
                 <wiwo-button id="treasure-shop-btn" appearance="primary-brand" href="http://shop-wirtschaftswoche.de/"
